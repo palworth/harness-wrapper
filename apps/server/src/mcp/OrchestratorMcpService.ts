@@ -73,6 +73,7 @@ import {
 import * as ThreadManagementService from "../orchestration-v2/ThreadManagementService.ts";
 import * as ProviderRegistry from "../provider/Services/ProviderRegistry.ts";
 import * as ScheduledTaskService from "../scheduledTasks/ScheduledTaskService.ts";
+import * as SecretRequests from "../secrets/SecretRequests.ts";
 import type { McpInvocationScope } from "./McpInvocationContext.ts";
 
 const DEFAULT_WAIT_TIMEOUT_MS = 10 * 60 * 1_000;
@@ -221,13 +222,7 @@ function scheduledTaskSummary(task: ScheduledTask): OrchestratorMcpScheduledTask
     ...(task.webhook?.url == null ? {} : { webhookUrl: task.webhook.url }),
     ...(task.webhook === undefined
       ? {}
-      : {
-          webhookSignature: task.webhook.hasSecret
-            ? "set"
-            : task.schedule.type === "webhook" && task.schedule.signature !== null
-              ? "secret_pending"
-              : "none",
-        }),
+      : { webhookSignature: task.webhook.hasSecret ? "set" : "none" }),
   };
 }
 
@@ -786,6 +781,7 @@ const make = Effect.gen(function* () {
   const providerRegistry = yield* ProviderRegistry.ProviderRegistry;
   const providerAdapters = yield* ProviderAdapterRegistry.ProviderAdapterRegistryV2;
   const scheduledTasks = yield* ScheduledTaskService.ScheduledTaskService;
+  const secretRequests = yield* SecretRequests.SecretRequests;
 
   const requireCapability = (scope: McpInvocationScope) =>
     scope.capabilities.has("orchestration")
@@ -1350,13 +1346,6 @@ const make = Effect.gen(function* () {
       Effect.gen(function* () {
         yield* requireCapability(scope);
         const parent = yield* loadProjection(scope.threadId);
-        const task = yield* loadScopedScheduledTask(parent.thread.projectId, input.scheduledTaskId);
-        if (task.schedule.type !== "webhook" || task.schedule.signature === null) {
-          return yield* failure(
-            "invalid_request",
-            "Only a webhook task with a signature check takes a signing secret. Set schedule.signature (with allowPendingSecret: true) first.",
-          );
-        }
         const run = ThreadManagementService.latestActiveRun(parent);
         if (
           run === undefined ||
@@ -1386,8 +1375,8 @@ const make = Effect.gen(function* () {
               nodeId,
               turnItemId,
               label: input.label,
-              reason: input.reason ?? "",
-              target: { kind: "scheduled_task_webhook_signature", scheduledTaskId: task.id },
+              reason: input.reason,
+              ...(input.placeholder === undefined ? {} : { placeholder: input.placeholder }),
               secretStatus,
             })
             .pipe(
@@ -1400,8 +1389,8 @@ const make = Effect.gen(function* () {
             );
         yield* record("pending");
 
-        // The card is answered by the user (scheduledTasks.answerSecretRequest)
-        // or ends with the run; poll it like a delegated task.
+        // The user answers the card (secrets.answerRequest), or it ends with
+        // the run; poll it like a delegated task.
         const answered = yield* Effect.gen(function* () {
           while (true) {
             const projection = yield* threadManagement
@@ -1438,10 +1427,13 @@ const make = Effect.gen(function* () {
             ),
           ),
         );
-        return {
-          scheduledTaskId: task.id,
-          status: Option.getOrElse(answered, () => "pending" as const),
-        };
+        const status = Option.getOrElse(answered, () => "pending" as const);
+        if (status !== "saved") return { status };
+        const secretRef = yield* secretRequests.savedRef({ threadId: scope.threadId, turnItemId });
+        return Option.match(secretRef, {
+          onNone: () => ({ status }),
+          onSome: (ref) => ({ status, secretRef: ref }),
+        });
       }),
     capabilities: (scope) =>
       Effect.gen(function* () {
@@ -2085,4 +2077,5 @@ export const layer: Layer.Layer<
   | ProviderRegistry.ProviderRegistry
   | ProviderAdapterRegistry.ProviderAdapterRegistryV2
   | ScheduledTaskService.ScheduledTaskService
+  | SecretRequests.SecretRequests
 > = Layer.effect(OrchestratorMcpService, make);
