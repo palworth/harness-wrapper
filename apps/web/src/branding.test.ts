@@ -24,9 +24,9 @@ describe("branding", () => {
       value: {
         desktopBridge: {
           getAppBranding: () => ({
-            baseName: "T3 Code",
+            baseName: "harness-wrapper",
             stageLabel: "Nightly",
-            displayName: "T3 Code (Nightly)",
+            displayName: "harness-wrapper (Nightly)",
           }),
         },
       },
@@ -34,9 +34,9 @@ describe("branding", () => {
 
     const branding = await import("./branding");
 
-    expect(branding.APP_BASE_NAME).toBe("T3 Code");
+    expect(branding.APP_BASE_NAME).toBe("harness-wrapper");
     expect(branding.APP_STAGE_LABEL).toBe("Nightly");
-    expect(branding.APP_DISPLAY_NAME).toBe("T3 Code (Nightly)");
+    expect(branding.APP_DISPLAY_NAME).toBe("harness-wrapper (Nightly)");
   });
 
   it("normalizes hosted app channel metadata", async () => {
@@ -84,33 +84,33 @@ describe("branding logic", () => {
   it("updates the display name for nightly primary server versions", () => {
     expect(
       resolveServerBackedAppDisplayName({
-        baseName: "T3 Code",
-        fallbackDisplayName: "T3 Code (Alpha)",
+        baseName: "harness-wrapper",
+        fallbackDisplayName: "harness-wrapper (Alpha)",
         fallbackStageLabel: "Alpha",
         primaryServerVersion: "0.0.28-nightly.20260616.12",
       }),
-    ).toBe("T3 Code (Nightly)");
+    ).toBe("harness-wrapper (Nightly)");
   });
 
   it("keeps the fallback display name for stable primary server versions", () => {
     expect(
       resolveServerBackedAppDisplayName({
-        baseName: "T3 Code",
-        fallbackDisplayName: "T3 Code (Alpha)",
+        baseName: "harness-wrapper",
+        fallbackDisplayName: "harness-wrapper (Alpha)",
         fallbackStageLabel: "Alpha",
         primaryServerVersion: "0.0.27",
       }),
-    ).toBe("T3 Code (Alpha)");
+    ).toBe("harness-wrapper (Alpha)");
   });
 
   it("keeps the fallback display name for malformed nightly primary server versions", () => {
     expect(
       resolveServerBackedAppDisplayName({
-        baseName: "T3 Code",
-        fallbackDisplayName: "T3 Code (Alpha)",
+        baseName: "harness-wrapper",
+        fallbackDisplayName: "harness-wrapper (Alpha)",
         fallbackStageLabel: "Alpha",
         primaryServerVersion: "0.0.28-nightly.20260616",
       }),
-    ).toBe("T3 Code (Alpha)");
+    ).toBe("harness-wrapper (Alpha)");
   });
 });

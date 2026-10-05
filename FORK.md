@@ -50,8 +50,27 @@ Tests that assert the old name were updated alongside: `apps/web/src/branding.te
 `apps/desktop/src/app/DesktopAppIdentity.test.ts`, `apps/desktop/src/app/DesktopPreReadyPlatform.test.ts`,
 `scripts/build-desktop-artifact.test.ts`, `scripts/install.test.ts`.
 
-In-app copy strings (error messages, settings help text) still say "T3 Code" — sweeping those is a
-separate, larger pass, because ~93 source files and ~50 test files reference them.
+### In-app copy sweep
+
+`scripts/rebrand.sh` rewrites upstream's "T3 Code" wording to "harness-wrapper" across app source
+(`apps/web/src`, `apps/desktop/src`, `apps/server/src`, `apps/mobile/src`, `packages`, plus
+`apps/web/index.html`). It is idempotent and safe to re-run — that is the point: upstream writes new
+copy constantly, so after a release sync takes upstream's wording, run it again:
+
+```bash
+./scripts/rebrand.sh
+git add -A && git commit -m "chore: re-apply harness-wrapper copy"
+```
+
+Deliberately left as upstream's spelling:
+
+| Where                                                                             | Why                                                                                                                       |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `DesktopUserData`, `DesktopLegacyLocalStorage`, `DesktopPreReadyFileSystem` tests | `T3 Code (Alpha)` is the on-disk profile folder of old installs — renaming it stops the migration                         |
+| `orchestration-v2/testkit/fixtures/**`, `*.fixture.*`                             | recorded provider transcripts (test data)                                                                                 |
+| any line carrying a `brand-keep` comment                                          | fixture values that describe the outside world (e.g. the `"T3 Code delegate_task"` tool name upstream agents really emit) |
+
+New exclusions belong in `scripts/rebrand.sh`, not in a one-off manual edit.
 
 ### CI runners
 
