@@ -8,17 +8,24 @@
 #   ./scripts/rebrand.sh            # rename the brand again
 #   git add -A && git commit
 #
+# Recorded test data (replay transcripts, *.fixture.* files, mock providers) IS
+# rewritten: those recordings assert what this app sends, so they have to carry
+# this app's name or every provider replay test fails on the first frame.
+#
 # Deliberately NOT rewritten:
-#   - recorded provider transcripts and *.fixture.* files (test data)
 #   - DesktopUserData / DesktopLegacyLocalStorage / DesktopPreReadyFileSystem,
 #     whose "T3 Code (Alpha)" literals are the on-disk profile names of old
 #     installs — renaming them would stop existing installs from migrating.
+#   - server evaluation fixtures (threadTitleEvaluationCases) and anything
+#     carrying a trailing "brand-keep" marker.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-FROM="T3 Code"
-ENCODED="T3+Code" # application/x-www-form-urlencoded spelling of the same phrase
 TO="harness-wrapper"
+# The old name in any casing ("T3 Code", "T3 CODE", "t3 code") and in its
+# form-encoded spelling ("T3+Code", which hides inside URL-encoded bodies).
+FROM_CI="t3 code"
+ENCODED_CI="t3+code"
 
 SCOPE=(
   apps/web/src
@@ -29,11 +36,17 @@ SCOPE=(
   apps/mobile/src
   packages
 )
-EXTRA=(apps/web/index.html)
+EXTRA=(
+  apps/web/index.html
+  # The triage prompt must stay byte-identical to this playbook or
+  # src/cli/triagePrompt.test.ts fails.
+  .github/triage/PLAYBOOK.md
+  # Mock provider whose responses AcpAdapterV2.test.ts asserts on.
+  apps/server/scripts/acp-mock-agent.ts
+)
 
 is_excluded() {
   case "$1" in
-    */fixtures/* | *.ndjson | *.fixture.* | \
     apps/desktop/src/app/DesktopUserData.ts | \
     apps/desktop/src/app/DesktopUserData.test.ts | \
     apps/desktop/src/app/DesktopLegacyLocalStorage.ts | \
@@ -47,14 +60,10 @@ is_excluded() {
 changed=0
 while IFS= read -r file; do
   if is_excluded "$file"; then continue; fi
-  # "T3 Code" plus its form-encoded spelling ("T3+Code"), which shows up in
-  # URL-encoded request bodies and would otherwise slip through unnoticed.
-  if grep -qF "$FROM" "$file" || grep -qF "$ENCODED" "$file"; then
-    # Lines carrying a "brand-keep" marker name old installs on disk and must
-    # keep upstream's spelling no matter how often this runs.
-    perl -pi -e "s/\Q$FROM\E/$TO/g unless /brand-keep/; s/\Q$ENCODED\E/$TO/g unless /brand-keep/" "$file"
-    changed=$((changed + 1))
-  fi
-done < <(grep -rIl -e "$FROM" -e "$ENCODED" "${SCOPE[@]}" "${EXTRA[@]}" --exclude-dir=node_modules 2>/dev/null || true)
+  # Lines carrying a "brand-keep" marker name old installs on disk or what the
+  # outside world really emits, and must keep upstream's spelling forever.
+  perl -pi -e "s/\b\Q$FROM_CI\E\b/$TO/gi unless /brand-keep/; s/\b\Q$ENCODED_CI\E\b/$TO/gi unless /brand-keep/" "$file"
+  changed=$((changed + 1))
+done < <(grep -rIli -e "$FROM_CI" -e "$ENCODED_CI" "${SCOPE[@]}" "${EXTRA[@]}" --exclude-dir=node_modules 2>/dev/null || true)
 
-echo "Rebranded $changed file(s): $FROM -> $TO"
+echo "Rebranded $changed file(s): T3 Code -> $TO"

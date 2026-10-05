@@ -54,38 +54,44 @@ Tests that assert the old name were updated alongside: `apps/web/src/branding.te
 
 `scripts/rebrand.sh` rewrites upstream's "T3 Code" wording to "harness-wrapper" across app source
 (`apps/web/src`, `apps/desktop/src`, `apps/desktop/scripts`, `apps/desktop/gnome-extension`,
-`apps/server/src`, `apps/mobile/src`, `packages`, plus `apps/web/index.html`). It is idempotent and
-safe to re-run — that is the point: upstream writes new copy constantly, so after a release sync
-takes upstream's wording, run it again:
+`apps/server/src`, `apps/mobile/src`, `packages`, plus `apps/web/index.html` and two files outside the
+scope — see below). It is idempotent and safe to re-run — that is the point: upstream writes new copy
+constantly, so after a release sync takes upstream's wording, run it again:
 
 ```bash
 ./scripts/rebrand.sh
 git add -A && git commit -m "chore: re-apply harness-wrapper copy"
 ```
 
-Deliberately left as upstream's spelling:
+What it does **not** rewrite:
 
 | Where                                                                             | Why                                                                                                                       |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `DesktopUserData`, `DesktopLegacyLocalStorage`, `DesktopPreReadyFileSystem` tests | `T3 Code (Alpha)` is the on-disk profile folder of old installs — renaming it stops the migration                         |
-| `orchestration-v2/testkit/fixtures/**`, `*.fixture.*`                             | recorded provider transcripts (test data)                                                                                 |
 | any line carrying a `brand-keep` comment                                          | fixture values that describe the outside world (e.g. the `"T3 Code delegate_task"` tool name upstream agents really emit) |
+| `apps/server/scripts/threadTitleEvaluationCases.ts`                               | model-title evaluation data, not UI copy                                                                                  |
+
+Recorded test data **is** rewritten — replay transcripts (`testkit/fixtures/**`, `*.ndjson`), `*.fixture.*`
+files, and `apps/server/scripts/acp-mock-agent.ts`. Those recordings assert the exact frames this app
+sends to providers and mock servers, so with upstream's name they fail on the very first
+`initialize` frame (`CodexAppServerReplayFrameMismatchError`), and the failure cascades into
+everything downstream (fork, merge-back, replay recovery, title generation).
 
 New exclusions belong in `scripts/rebrand.sh`, not in a one-off manual edit.
 
 Never swept (by design, not oversight):
 
-| Where                                               | Why                                                                                        |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `docs/**`, `README.md`, `AGENTS.md`, `.github/**`   | upstream's documentation; rewording it only creates conflicts                              |
-| `apps/marketing/**`                                 | the hosted marketing site is upstream's — a separate, high-conflict rebrand if you want it |
-| `apps/mobile/app.config.ts`                         | the mobile app's actual name (`appName`) and store metadata — deep rebrand territory       |
-| `apps/server/scripts/threadTitleEvaluationCases.ts` | evaluation fixtures, not UI copy                                                           |
-| `native/**`, `packaging/**`, `patches/**`           | build/packaging metadata and native helper sources                                         |
-| macOS DMG background SVGs, app icons                | artwork; needs a designer, not a sed                                                       |
+| Where                                                     | Why                                                                                                                                                                        |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/**`, `README.md`, `AGENTS.md`, most of `.github/**` | upstream's documentation; rewording it only creates conflicts (`.github/triage/PLAYBOOK.md` is the one exception — a test requires it byte-identical to the triage prompt) |
+| `apps/marketing/**`                                       | the hosted marketing site is upstream's — a separate, high-conflict rebrand if you want it                                                                                 |
+| `apps/mobile/app.config.ts`                               | the mobile app's actual name (`appName`) and store metadata — deep rebrand territory                                                                                       |
+| `native/**`, `packaging/**`, `patches/**`                 | build/packaging metadata and native helper sources                                                                                                                         |
+| macOS DMG background SVGs, app icons                      | artwork; needs a designer, not a sed                                                                                                                                       |
 
-The form-encoded spelling of the old name (`T3+Code`) is rewritten too — it hides inside URL-encoded
-request bodies and would otherwise fail assertions that the plain-text pass leaves green.
+Matching is case-insensitive over the phrase (`T3 Code`, `T3 CODE`, `t3 code`) and also covers the
+form-encoded spelling (`T3+Code`), which hides inside URL-encoded request bodies — both otherwise
+produce assertions that pass on the plain-text pass and fail in CI.
 
 ### CI runners
 
@@ -101,6 +107,17 @@ App is installed on the account. On this fork they are mapped to GitHub-hosted r
 If upstream adds a job with a `blacksmith-*` runner label, it queues forever until you map it the same
 way. `.github/actions/setup-apt-mirrors` writes its own mirror-list file, so it keeps working on
 GitHub-hosted runners.
+
+## Known failures that are not the fork's fault
+
+- `scripts/build-desktop-artifact.test.ts > skips the primary native probe for cross-architecture
+Windows payloads` — fails on macOS locally, passes on Linux CI. Pre-dates every fork commit.
+- `apps/mobile/src/features/review/shikiReviewHighlighter.test.ts > initializes source and snippet
+highlighting without a warmup` — token-granularity race between two highlight paths; fails
+  occasionally in CI, passes when run locally. Re-run before blaming a change.
+- Local `pnpm test` never reaches `apps/server`: `vp run -r test` stops at the first failing workspace
+  (usually the local-only `build-desktop-artifact` failure above), so server regressions only show up
+  in CI. Run them explicitly: `cd apps/server && corepack pnpm vp test run`.
 
 ## Adding features
 
