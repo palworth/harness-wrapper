@@ -219,6 +219,9 @@ jobs:
     if: needs.sync.outputs.conflict == 'false' && needs.sync.outputs.synced == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      # No checkout in this job, so gh must take the repo from the environment.
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Wait for every check on the sync PR
         env:
