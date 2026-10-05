@@ -53,9 +53,10 @@ Tests that assert the old name were updated alongside: `apps/web/src/branding.te
 ### In-app copy sweep
 
 `scripts/rebrand.sh` rewrites upstream's "T3 Code" wording to "harness-wrapper" across app source
-(`apps/web/src`, `apps/desktop/src`, `apps/server/src`, `apps/mobile/src`, `packages`, plus
-`apps/web/index.html`). It is idempotent and safe to re-run — that is the point: upstream writes new
-copy constantly, so after a release sync takes upstream's wording, run it again:
+(`apps/web/src`, `apps/desktop/src`, `apps/desktop/scripts`, `apps/desktop/gnome-extension`,
+`apps/server/src`, `apps/mobile/src`, `packages`, plus `apps/web/index.html`). It is idempotent and
+safe to re-run — that is the point: upstream writes new copy constantly, so after a release sync
+takes upstream's wording, run it again:
 
 ```bash
 ./scripts/rebrand.sh
@@ -71,6 +72,20 @@ Deliberately left as upstream's spelling:
 | any line carrying a `brand-keep` comment                                          | fixture values that describe the outside world (e.g. the `"T3 Code delegate_task"` tool name upstream agents really emit) |
 
 New exclusions belong in `scripts/rebrand.sh`, not in a one-off manual edit.
+
+Never swept (by design, not oversight):
+
+| Where                                               | Why                                                                                        |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `docs/**`, `README.md`, `AGENTS.md`, `.github/**`   | upstream's documentation; rewording it only creates conflicts                              |
+| `apps/marketing/**`                                 | the hosted marketing site is upstream's — a separate, high-conflict rebrand if you want it |
+| `apps/mobile/app.config.ts`                         | the mobile app's actual name (`appName`) and store metadata — deep rebrand territory       |
+| `apps/server/scripts/threadTitleEvaluationCases.ts` | evaluation fixtures, not UI copy                                                           |
+| `native/**`, `packaging/**`, `patches/**`           | build/packaging metadata and native helper sources                                         |
+| macOS DMG background SVGs, app icons                | artwork; needs a designer, not a sed                                                       |
+
+The form-encoded spelling of the old name (`T3+Code`) is rewritten too — it hides inside URL-encoded
+request bodies and would otherwise fail assertions that the plain-text pass leaves green.
 
 ### CI runners
 

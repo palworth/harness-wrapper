@@ -128,15 +128,14 @@ const withIdentity = <A, E, R>(
         Layer.provide(NodePath.layerPosix),
         Layer.provideMerge(
           FileSystem.layerNoop({
-            exists: (path) =>
-              input.legacyPathProbeError
-                ? Effect.fail(input.legacyPathProbeError)
-                : Effect.succeed(
-                    input.legacyPathExists === true &&
-                      /T3 Code \((Alpha|Dev)\)/.test(
-                        path,
-                      ) /* brand-keep: on-disk name of old installs, see DesktopUserData */,
-                  ),
+            exists: (path) => {
+              if (input.legacyPathProbeError) {
+                return Effect.fail(input.legacyPathProbeError);
+              }
+              // On-disk profile folder names of old installs, see DesktopUserData.
+              const isLegacyProfileDir = /T3 Code \((Alpha|Dev)\)/.test(path); /* brand-keep */
+              return Effect.succeed(input.legacyPathExists === true && isLegacyProfileDir);
+            },
             readFileString: () =>
               Effect.succeed(input.packageJson ?? '{"t3codeCommitHash":"abcdef1234567890"}'),
           }),

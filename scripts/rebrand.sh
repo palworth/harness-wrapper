@@ -23,6 +23,8 @@ TO="harness-wrapper"
 SCOPE=(
   apps/web/src
   apps/desktop/src
+  apps/desktop/scripts
+  apps/desktop/gnome-extension
   apps/server/src
   apps/mobile/src
   packages
