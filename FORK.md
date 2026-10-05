@@ -50,6 +50,24 @@ Tests that assert the old name were updated alongside: `apps/web/src/branding.te
 `apps/desktop/src/app/DesktopAppIdentity.test.ts`, `apps/desktop/src/app/DesktopPreReadyPlatform.test.ts`,
 `scripts/build-desktop-artifact.test.ts`, `scripts/install.test.ts`.
 
+In-app copy strings (error messages, settings help text) still say "T3 Code" — sweeping those is a
+separate, larger pass, because ~93 source files and ~50 test files reference them.
+
+### CI runners
+
+`.github/workflows/ci.yml` targets `blacksmith-*` runners, which only work when the Blacksmith GitHub
+App is installed on the account. On this fork they are mapped to GitHub-hosted runners, which are
+**free and unlimited for public repositories**:
+
+| Upstream                             | Here                    |
+| ------------------------------------ | ----------------------- |
+| `blacksmith-{2,4,8}vcpu-ubuntu-2404` | `ubuntu-24.04` (4 vCPU) |
+| `blacksmith-6vcpu-macos-26`          | `macos-latest`          |
+
+If upstream adds a job with a `blacksmith-*` runner label, it queues forever until you map it the same
+way. `.github/actions/setup-apt-mirrors` writes its own mirror-list file, so it keeps working on
+GitHub-hosted runners.
+
 ## Adding features
 
 Work on a branch off `main`, not on `main` itself:
@@ -76,3 +94,10 @@ Guidelines that keep release syncs painless:
 - `allow_auto_merge` is enabled (required for the sync PR to merge itself).
 - Issues are enabled (used for conflict reports).
 - Actions are enabled for the fork.
+- Upstream workflows for infrastructure are **disabled** (state persists across release syncs):
+  `release` (which runs on a 30-minute schedule), `release-desktop`, `deploy-relay`,
+  `cursor-hygiene-webhook`, `web-preview`, `thread-transfer-report`, `mobile-eas-*`,
+  `mobile-fingerprint-check`, `mobile-showcase-screenshots`, `desktop-macos-preview*`, `publish-aur`,
+  `pr-vouch`, `pr-size`, `issue-labels`.
+  **Kept enabled:** `CI`, `Sync upstream release` (and `windows-tests`, manual dispatch only).
+  Re-enable with `gh workflow enable <file> --repo palworth/harness-wrapper`.
