@@ -1,0 +1,252 @@
+name: Sync upstream release
+
+# Keeps this fork auto-synced with releases of pingdotgg/t3code.
+#
+# Every 6 hours (or on manual dispatch) it resolves the latest upstream
+# release tag, merges it into a `sync/<tag>` branch, opens a PR, waits until
+# CI is green, and merges it. A conflicting sync opens an issue instead of
+# merging anything.
+
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Upstream tag to sync (defaults to the latest pingdotgg/t3code release)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPO: pingdotgg/t3code
+
+jobs:
+  sync:
+    name: Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      branch: ${{ steps.merge.outputs.branch }}
+      tag: ${{ steps.target.outputs.tag }}
+      conflict: ${{ steps.merge.outputs.conflict }}
+      synced: ${{ steps.target.outputs.needed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream tags
+        run: |
+          git remote add upstream "https://github.com/${UPSTREAM_REPO}.git"
+          git fetch upstream --tags --force
+
+      - name: Resolve target release tag
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -n "${INPUT_TAG:-}" ]; then
+            tag="$INPUT_TAG"
+          else
+            tag="$(gh release view --repo "$UPSTREAM_REPO" --json tagName -q .tagName)"
+          fi
+
+          if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::Upstream tag not found: $tag"
+            exit 1
+          fi
+
+          if git merge-base --is-ancestor "$tag" HEAD; then
+            needed=false
+            echo "Already synced: $tag"
+          else
+            needed=true
+            echo "Needs sync: $tag"
+          fi
+
+          {
+            echo "tag=$tag"
+            echo "needed=$needed"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Merge release into a sync branch
+        id: merge
+        if: steps.target.outputs.needed == 'true'
+        env:
+          TAG: ${{ steps.target.outputs.tag }}
+        run: |
+          set -euo pipefail
+          branch="sync/${TAG}"
+          git checkout -B "$branch" origin/main
+
+          if git merge --no-ff --no-edit "$TAG"; then
+            git push --force-with-lease origin "$branch"
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort || true
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Merge conflict while syncing $TAG"
+          fi
+
+      - name: Open a sync PR
+        if: steps.merge.outputs.conflict == 'false' && steps.target.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.target.outputs.tag }}
+          BRANCH: ${{ steps.merge.outputs.branch }}
+        run: |
+          set -euo pipefail
+          if gh pr view "$BRANCH" --json number -q .number >/dev/null 2>&1; then
+            echo "PR already exists for $BRANCH"
+            exit 0
+          fi
+
+          gh label create upstream-sync --color 1d76db --description "Automated upstream sync" --force
+          gh pr create \
+            --head "$BRANCH" \
+            --base main \
+            --title "chore: sync upstream ${TAG}" \
+            --label upstream-sync \
+            --body "$(cat <<EOF
+          Automated sync from [\`$(printf '%s' "$UPSTREAM_REPO")\`] (release \`${TAG}\`).
+
+          - Merged \`${TAG}\` into \`main\` (merge commit, no squash).
+          - This PR merges itself once every check is green.
+          - If it cannot merge cleanly, an issue is opened instead.
+
+          _Triggered by the \`sync-upstream\` workflow._
+          EOF
+          )"
+
+      - name: Report conflict as an issue
+        if: steps.merge.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.target.outputs.tag }}
+        run: |
+          set -euo pipefail
+          title="Upstream sync conflict: ${TAG}"
+          open="$(gh issue list --state open --json number,title \
+            --jq "[.[] | select(.title == \"${title}\")] | first | .number // empty")"
+
+          if [ -n "$open" ]; then
+            echo "Issue already open: #$open"
+            exit 0
+          fi
+
+          gh label create upstream-sync --color 1d76db --description "Automated upstream sync" --force
+          gh issue create \
+            --title "$title" \
+            --label upstream-sync \
+            --body "$(cat <<EOF
+          Merging upstream release \`${TAG}\` into \`main\` conflicts with changes in this fork.
+
+          Resolve locally:
+
+          \`\`\`bash
+          git fetch upstream --tags
+          git checkout -B "sync/${TAG}" main
+          git merge --no-ff "${TAG}"
+          # resolve conflicts, then
+          git push -u origin "sync/${TAG}"
+          gh pr create --head "sync/${TAG}" --base main --title "chore: sync upstream ${TAG}"
+          \`\`\`
+
+          _Triggered by the \`sync-upstream\` workflow._
+          EOF
+          )"
+
+  gate:
+    name: Gate
+    needs: sync
+    if: needs.sync.outputs.conflict == 'false' && needs.sync.outputs.synced == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout the sync branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.sync.outputs.branch }}
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Cache pnpm store
+        uses: actions/cache@v6
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+  merge:
+    name: Merge when green
+    needs: [sync, gate]
+    if: needs.sync.outputs.conflict == 'false' && needs.sync.outputs.synced == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Wait for every check on the sync PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ needs.sync.outputs.branch }}
+        run: |
+          set -euo pipefail
+          # Give the PR's own CI time to register checks before watching.
+          for _ in $(seq 1 20); do
+            count="$(gh pr checks "$BRANCH" --json bucket --jq 'length' 2>/dev/null || echo 0)"
+            [ "${count:-0}" -gt 0 ] && break
+            sleep 30
+          done
+
+          count="$(gh pr checks "$BRANCH" --json bucket --jq 'length' 2>/dev/null || echo 0)"
+          echo "Checks on $BRANCH: ${count:-0}"
+          if [ "${count:-0}" -eq 0 ]; then
+            echo "::notice::No PR checks reported; merging on the sync gate alone."
+            exit 0
+          fi
+
+          gh pr checks "$BRANCH" --watch --interval 30
+
+      - name: Merge the sync PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ needs.sync.outputs.branch }}
+        run: |
+          set -euo pipefail
+          gh pr merge "$BRANCH" --merge --delete-branch
+          echo "Synced ${{ needs.sync.outputs.tag }} into main."
