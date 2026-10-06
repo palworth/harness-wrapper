@@ -3365,7 +3365,7 @@ export function GeneralSettingsPanel() {
         />
         <SettingsRow
           {...searchableSetting("open-source-licenses")}
-          description="Notices for dependencies, assets, and optional tools used by harness-wrapper."
+          description="Notices for dependencies, assets, and optional tools used by OC-UI."
           control={
             <Button
               render={<Link to="/settings/open-source-licenses" />}

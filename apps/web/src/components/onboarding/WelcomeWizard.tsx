@@ -219,9 +219,9 @@ export function WelcomeWizard({
         initialFocus={() => document.getElementById("onboarding-pairing-url") ?? true}
       >
         <WizardHeader
-          title="Set up harness-wrapper"
+          title="Set up OC-UI"
           identity={
-            <div className="flex items-baseline gap-1.5" role="img" aria-label="harness-wrapper">
+            <div className="flex items-baseline gap-1.5" role="img" aria-label="OC-UI">
               <T3Wordmark className="h-4 w-auto shrink-0" aria-hidden />
               <span className="text-2xl font-medium tracking-tight text-muted-foreground">
                 Code
@@ -501,7 +501,7 @@ function ConnectAccountOption({
             </p>
             <CommandBlock command="npx t3 connect" className="mt-3" />
             <p className="mt-3 text-xs text-muted-foreground">
-              Keep harness-wrapper running. Select the computers you want to set up above.
+              Keep OC-UI running. Select the computers you want to set up above.
             </p>
           </div>
         </CollapsiblePanel>
@@ -615,8 +615,8 @@ function PairingForm({
             </p>
             <CommandBlock command="npx t3 pair" className="mt-2" />
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              Start harness-wrapper first, or run <code className="font-mono">npx t3 serve</code>.
-              Add <code className="font-mono">--tailscale</code> to use your tailnet.
+              Start OC-UI first, or run <code className="font-mono">npx t3 serve</code>. Add{" "}
+              <code className="font-mono">--tailscale</code> to use your tailnet.
             </p>
           </CollapsiblePanel>
         </Collapsible>

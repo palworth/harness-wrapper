@@ -366,7 +366,7 @@ export const makeCloudflaredRelayClient = Effect.fn("cloudflared.make")(function
     if (!releaseAsset) {
       return yield* new RelayClientInstallError({
         reason: "unsupported_platform",
-        message: `harness-wrapper does not provide a managed relay client binary for ${platform}-${arch}.`,
+        message: `OC-UI does not provide a managed relay client binary for ${platform}-${arch}.`,
       });
     }
 

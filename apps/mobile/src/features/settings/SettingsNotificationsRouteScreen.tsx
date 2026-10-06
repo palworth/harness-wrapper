@@ -334,7 +334,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
 
       Alert.alert(
         "Disable notifications",
-        "Open system Settings to disable notifications for harness-wrapper.",
+        "Open system Settings to disable notifications for OC-UI.",
         [
           { text: "Cancel", style: "cancel" },
           { text: "Open Settings", onPress: () => void Linking.openSettings() },
@@ -486,7 +486,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
                 void openAndroidLiveUpdateSettings().catch(() => {
                   Alert.alert(
                     "Couldn't open Settings",
-                    "Open Android Settings, select harness-wrapper, then enable Live Updates in Notifications.",
+                    "Open Android Settings, select OC-UI, then enable Live Updates in Notifications.",
                   );
                 });
               }}

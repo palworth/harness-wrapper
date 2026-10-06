@@ -1185,7 +1185,7 @@ export const RelayApi = HttpApi.make("RelayApi")
     RelayDpopClientGroup,
     RelayServerGroup,
   )
-  .annotate(OpenApi.Title, "harness-wrapper Relay API")
+  .annotate(OpenApi.Title, "OC-UI Relay API")
   .annotate(OpenApi.Version, "1.0.0")
   .annotate(
     OpenApi.Description,

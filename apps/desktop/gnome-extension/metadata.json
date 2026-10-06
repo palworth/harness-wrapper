@@ -1,7 +1,7 @@
 {
   "uuid": "snap-shot@t3.codes",
-  "name": "harness-wrapper SnapShots",
-  "description": "Allows harness-wrapper to capture the focused window, identify it for optional accessibility text, and animate it into harness-wrapper. Disable this extension to revoke access.",
+  "name": "OC-UI SnapShots",
+  "description": "Allows OC-UI to capture the focused window, identify it for optional accessibility text, and animate it into OC-UI. Disable this extension to revoke access.",
   "shell-version": ["45", "46", "47", "48", "49", "50"],
   "version": 2,
   "url": "https://github.com/pingdotgg/t3code"

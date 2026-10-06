@@ -1,5 +1,5 @@
 > [!NOTE]
-> **harness-wrapper** is an independent fork of [pingdotgg/t3code](https://github.com/pingdotgg/t3code)
+> **OC-UI** is an independent fork of [pingdotgg/t3code](https://github.com/pingdotgg/t3code)
 > maintained by [@palworth](https://github.com/palworth). It pulls in upstream releases automatically and
 > carries a small set of personal changes on top. See [FORK.md](FORK.md) for what changed and how syncing
 > works. Everything below comes from upstream.

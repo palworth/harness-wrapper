@@ -52,7 +52,7 @@ export function buildInitialCursorProviderSnapshot(
           version: null,
           status: "warning",
           auth: { status: "unknown" },
-          message: "Cursor is disabled in harness-wrapper settings.",
+          message: "Cursor is disabled in OC-UI settings.",
         },
       });
     }
@@ -265,7 +265,7 @@ export const checkCursorProviderStatus = Effect.fn("checkCursorProviderStatus")(
         version: null,
         status: "warning",
         auth: { status: "unknown" },
-        message: "Cursor is disabled in harness-wrapper settings.",
+        message: "Cursor is disabled in OC-UI settings.",
       },
     });
   }

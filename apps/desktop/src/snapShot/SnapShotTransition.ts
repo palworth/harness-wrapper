@@ -114,7 +114,7 @@ function createWindow(
     resizable: false,
     show: false,
     skipTaskbar: true,
-    title: "harness-wrapper Snapshot Animation",
+    title: "OC-UI Snapshot Animation",
     transparent: true,
     webPreferences: {
       backgroundThrottling: false,

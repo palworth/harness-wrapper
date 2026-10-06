@@ -59,7 +59,7 @@ export class DesktopAppUnreachableError extends Schema.TaggedError<DesktopAppUnr
   },
 ) {
   override get message(): string {
-    return "Could not reach the harness-wrapper desktop app. Start or update the desktop app on this machine, then run `t3 app` again. A running harness-wrapper server is not enough.";
+    return "Could not reach the OC-UI desktop app. Start or update the desktop app on this machine, then run `t3 app` again. A running OC-UI server is not enough.";
   }
 }
 
@@ -73,7 +73,7 @@ export class DesktopAppRequestFailedError extends Schema.TaggedError<DesktopAppR
   },
 ) {
   override get message(): string {
-    return `harness-wrapper could not open ${this.workspaceRoot} (${this.code}).`;
+    return `OC-UI could not open ${this.workspaceRoot} (${this.code}).`;
   }
 }
 
@@ -246,7 +246,7 @@ const runAppCommand = Effect.fn("cli.app")(function* (flags: {
     });
   }
 
-  yield* Console.log(`Opened ${workspaceRoot} in harness-wrapper.`);
+  yield* Console.log(`Opened ${workspaceRoot} in OC-UI.`);
 });
 
 export const appCommand = Command.make("app", {
@@ -256,6 +256,6 @@ export const appCommand = Command.make("app", {
     Argument.optional,
   ),
 }).pipe(
-  Command.withDescription("Open a project in the running harness-wrapper desktop app."),
+  Command.withDescription("Open a project in the running OC-UI desktop app."),
   Command.withHandler(runAppCommand),
 );

@@ -146,7 +146,7 @@ function ChatRouteGlobalShortcuts() {
             stackedThreadToast({
               type: "info",
               title: "Preview is desktop-only",
-              description: "Open harness-wrapper in the desktop app to use the in-app preview.",
+              description: "Open OC-UI in the desktop app to use the in-app preview.",
             }),
           );
           return;

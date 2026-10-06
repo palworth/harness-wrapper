@@ -171,10 +171,7 @@ export async function startDesktopAppControlServer(input: {
       activeRequestId = parsed.requestId;
       void input.handle(parsed).then(finish, () => {
         finish(
-          invalidResponse(
-            parsed.requestId,
-            "harness-wrapper could not process the desktop app request.",
-          ),
+          invalidResponse(parsed.requestId, "OC-UI could not process the desktop app request."),
         );
       });
     });

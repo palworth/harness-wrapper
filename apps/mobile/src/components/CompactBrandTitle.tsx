@@ -32,7 +32,7 @@ export function CompactBrandTitle(
   return (
     <View
       aria-level={1}
-      accessibilityLabel="harness-wrapper, Threads"
+      accessibilityLabel="OC-UI, Threads"
       accessible
       role="heading"
       className="flex-row items-center gap-1.5"

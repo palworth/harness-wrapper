@@ -3292,7 +3292,7 @@ export function ConnectionsSettings() {
         {desktopWslState.enabled ? (
           <SettingsRow
             title="WSL only"
-            description="Run only the WSL backend. harness-wrapper restarts when this changes."
+            description="Run only the WSL backend. OC-UI restarts when this changes."
             className="bg-muted/20 pl-7 sm:pl-8"
             control={
               <Switch
@@ -3575,8 +3575,8 @@ export function ConnectionsSettings() {
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   {pendingDesktopServerExposureMode === "network-accessible"
-                    ? "Let your other devices connect to harness-wrapper over the network. Pair devices to give them access. harness-wrapper will restart."
-                    : "Devices connected over your local network will disconnect. Existing tunnels, such as T3 Connect or Tailscale HTTPS, keep working. harness-wrapper will restart."}
+                    ? "Let your other devices connect to OC-UI over the network. Pair devices to give them access. OC-UI will restart."
+                    : "Devices connected over your local network will disconnect. Existing tunnels, such as T3 Connect or Tailscale HTTPS, keep working. OC-UI will restart."}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -3630,15 +3630,15 @@ export function ConnectionsSettings() {
                 <AlertDialogDescription>
                   {pendingWslChange?.kind === "disable"
                     ? pendingWslChange.wasWslOnly
-                      ? "harness-wrapper will restart on the Windows backend. Threads and projects opened against WSL stay safe inside the distro and become available again when you re-enable WSL."
-                      : "The WSL backend will stop. Threads and projects opened against WSL stay safe inside the distro, but they'll be unavailable in harness-wrapper until you re-enable WSL."
+                      ? "OC-UI will restart on the Windows backend. Threads and projects opened against WSL stay safe inside the distro and become available again when you re-enable WSL."
+                      : "The WSL backend will stop. Threads and projects opened against WSL stay safe inside the distro, but they'll be unavailable in OC-UI until you re-enable WSL."
                     : pendingWslChange?.kind === "distro"
-                      ? "harness-wrapper will restart the WSL backend on the new distro. Sessions still running on the current distro will be interrupted."
+                      ? "OC-UI will restart the WSL backend on the new distro. Sessions still running on the current distro will be interrupted."
                       : pendingWslChange?.kind === "enable"
                         ? "Run the WSL backend alongside the Windows one, or stop the Windows backend and use only WSL? You can change this later from Settings."
                         : pendingWslChange?.nextValue
-                          ? "harness-wrapper will restart and start only the WSL backend. Your Windows-side projects won't be accessible until you turn this off again."
-                          : "harness-wrapper will restart and bring the Windows backend back up alongside WSL."}
+                          ? "OC-UI will restart and start only the WSL backend. Your Windows-side projects won't be accessible until you turn this off again."
+                          : "OC-UI will restart and bring the Windows backend back up alongside WSL."}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -3724,7 +3724,7 @@ export function ConnectionsSettings() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Disable Tailscale HTTPS?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  harness-wrapper will restart the local backend without Tailscale Serve.
+                  OC-UI will restart the local backend without Tailscale Serve.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -3762,8 +3762,8 @@ export function ConnectionsSettings() {
               <DialogHeader>
                 <DialogTitle>Set up Tailscale HTTPS?</DialogTitle>
                 <DialogDescription>
-                  harness-wrapper will restart the local backend with Tailscale Serve enabled and
-                  ask Tailscale to proxy HTTPS traffic to this backend.
+                  OC-UI will restart the local backend with Tailscale Serve enabled and ask
+                  Tailscale to proxy HTTPS traffic to this backend.
                 </DialogDescription>
               </DialogHeader>
               <DialogPanel>

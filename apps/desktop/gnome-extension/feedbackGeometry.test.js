@@ -4,13 +4,9 @@ import { captureDestinationFrame, findCaptureDestination } from "./feedbackGeome
 const window = (pid, title) => ({ get_pid: () => pid, get_title: () => title });
 
 it("activates only a window of the process authenticated by D-Bus", () => {
-  const target = window(42, "harness-wrapper");
-  expect(
-    findCaptureDestination([window(99, "harness-wrapper"), target], 42, "harness-wrapper"),
-  ).toBe(target);
-  expect(
-    findCaptureDestination([window(99, "harness-wrapper")], 42, "harness-wrapper"),
-  ).toBeUndefined();
+  const target = window(42, "OC-UI");
+  expect(findCaptureDestination([window(99, "OC-UI"), target], 42, "OC-UI")).toBe(target);
+  expect(findCaptureDestination([window(99, "OC-UI")], 42, "OC-UI")).toBeUndefined();
   expect(findCaptureDestination([target], 42, "Title before navigation")).toBe(target);
 });
 

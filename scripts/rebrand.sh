@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Re-applies the harness-wrapper brand to upstream's "T3 Code" copy.
+# Re-applies the OC-UI brand to upstream's "T3 Code" copy.
 #
 # Upstream writes new user-facing copy constantly, so after every release sync
 # (or whenever a conflict touches copy), keep upstream's text and re-run this:
@@ -21,7 +21,10 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-TO="harness-wrapper"
+TO="OC-UI"
+# The earlier fork name, rewritten to $TO too, except in the repo URL
+# (github.com/palworth/harness-wrapper).
+PREVIOUS="harness-wrapper"
 # The old name in any casing ("T3 Code", "T3 CODE", "t3 code") and in its
 # form-encoded spelling ("T3+Code", which hides inside URL-encoded bodies).
 FROM_CI="t3 code"
@@ -62,8 +65,8 @@ while IFS= read -r file; do
   if is_excluded "$file"; then continue; fi
   # Lines carrying a "brand-keep" marker name old installs on disk or what the
   # outside world really emits, and must keep upstream's spelling forever.
-  perl -pi -e "s/\b\Q$FROM_CI\E\b/$TO/gi unless /brand-keep/; s/\b\Q$ENCODED_CI\E\b/$TO/gi unless /brand-keep/" "$file"
+  perl -pi -e "s/\b\Q$FROM_CI\E\b/$TO/gi unless /brand-keep/; s/\b\Q$ENCODED_CI\E\b/$TO/gi unless /brand-keep/; s{(?<!palworth/)\Q$PREVIOUS\E\b}{$TO}gi unless /brand-keep/" "$file"
   changed=$((changed + 1))
-done < <(grep -rIli -e "$FROM_CI" -e "$ENCODED_CI" "${SCOPE[@]}" "${EXTRA[@]}" --exclude-dir=node_modules 2>/dev/null || true)
+done < <(grep -rIli -e "$FROM_CI" -e "$ENCODED_CI" -e "$PREVIOUS" "${SCOPE[@]}" "${EXTRA[@]}" --exclude-dir=node_modules 2>/dev/null || true)
 
 echo "Rebranded $changed file(s): T3 Code -> $TO"

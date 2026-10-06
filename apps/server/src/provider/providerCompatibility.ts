@@ -82,11 +82,11 @@ export function resolveProviderCompatibility(
       : "unknown";
   const message =
     status === "broken"
-      ? "This provider version is known to be incompatible with this harness-wrapper release."
+      ? "This provider version is known to be incompatible with this OC-UI release."
       : status === "unsupported"
-        ? "This provider version is outside the supported range for this harness-wrapper release."
+        ? "This provider version is outside the supported range for this OC-UI release."
         : status === "graceful"
-          ? "This provider version has limited compatibility with this harness-wrapper release."
+          ? "This provider version has limited compatibility with this OC-UI release."
           : null;
   const recommendedVersion = policy.recommendedVersion ?? null;
   const recommendedRange = policy.recommendedRange ?? null;
