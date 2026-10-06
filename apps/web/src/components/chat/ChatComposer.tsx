@@ -7472,8 +7472,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       <VoiceDictationButton
                         targetKey={composerDraftTargetKey}
                         disabled={
+                          // Every early return of insertComposerText, plus the editor's own extras.
                           isConnecting ||
                           isComposerApprovalState ||
+                          pendingUserInputs.length > 0 ||
                           projectSelectionRequired ||
                           isChoiceOnlyPendingQuestion ||
                           activePendingIsResponding

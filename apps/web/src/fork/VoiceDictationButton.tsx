@@ -1,5 +1,5 @@
 import { MicIcon, SquareIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -31,52 +31,92 @@ export function VoiceDictationButton(props: {
   const sessionRef = useRef<DictationSession | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const onTextRef = useRef(props.onText);
-  onTextRef.current = props.onText;
+  const targetKeyRef = useRef(props.targetKey);
+  // Layout effect, not render: the target-switch cancel below also runs before paint, so a queued
+  // flush can never deliver one thread's transcript through another thread's callback.
+  useLayoutEffect(() => {
+    onTextRef.current = props.onText;
+    targetKeyRef.current = props.targetKey;
+  });
 
   // Deltas are buffered and inserted at most once per frame: the composer only syncs its caret
   // with the prompt after React commits, so back-to-back inserts would land at a stale caret.
-  const bufferRef = useRef<{ text: string; first: boolean } | null>(null);
+  // Each chunk is stamped with its session id and start target; a flush drops chunks that no
+  // longer match the live session/target.
+  const bufferRef = useRef<{
+    text: string;
+    first: boolean;
+    sessionId: number;
+    targetKey: string;
+  } | null>(null);
   const frameRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const nextSessionIdRef = useRef(0);
+  const activeSessionIdRef = useRef(0); // 0 = no live session
 
   const dropBuffer = () => {
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    clearTimeout(timerRef.current);
+    timerRef.current = undefined;
     frameRef.current = null;
     bufferRef.current = null;
   };
 
   const flushBuffer = () => {
-    frameRef.current = null;
     const buffered = bufferRef.current;
-    bufferRef.current = null;
-    if (buffered) onTextRef.current(buffered.text, buffered.first);
+    dropBuffer();
+    if (
+      buffered &&
+      buffered.sessionId === activeSessionIdRef.current &&
+      buffered.targetKey === targetKeyRef.current
+    ) {
+      onTextRef.current(buffered.text, buffered.first);
+    }
   };
 
   const cancelSession = () => {
+    activeSessionIdRef.current = 0;
     sessionRef.current?.cancel();
     sessionRef.current = null;
     dropBuffer();
     setState("idle");
   };
   const cancelSessionRef = useRef(cancelSession);
-  cancelSessionRef.current = cancelSession;
+  useLayoutEffect(() => {
+    cancelSessionRef.current = cancelSession;
+  });
 
   // A session belongs to the thread/draft it started in: cancel when that changes and on unmount.
-  useEffect(() => () => cancelSessionRef.current(), [props.targetKey]);
+  useLayoutEffect(() => () => cancelSessionRef.current(), [props.targetKey]);
+
+  // A composer that stops accepting input must not keep recording into it.
+  useLayoutEffect(() => {
+    if (props.disabled && sessionRef.current) cancelSessionRef.current();
+  }, [props.disabled]);
 
   const begin = (apiKey: string) => {
     setState("listening");
+    const sessionId = ++nextSessionIdRef.current;
+    const targetKey = targetKeyRef.current;
+    activeSessionIdRef.current = sessionId;
     sessionRef.current = startDictation(apiKey, {
       onText: (text, first) => {
         const buffered = bufferRef.current;
         bufferRef.current = {
           text: (buffered?.text ?? "") + text,
           first: (buffered?.first ?? false) || first,
+          sessionId,
+          targetKey,
         };
         frameRef.current ??= requestAnimationFrame(flushBuffer);
+        // rAF is paused while the Electron window is hidden; don't let text sit there.
+        timerRef.current ??= setTimeout(flushBuffer, 250);
       },
       onError: (message) =>
         toastManager.add({ type: "error", title: "Dictation stopped", description: message }),
       onEnd: () => {
+        flushBuffer(); // deliver anything still queued before reporting the end
+        if (activeSessionIdRef.current === sessionId) activeSessionIdRef.current = 0;
         sessionRef.current = null;
         setState("idle");
       },
