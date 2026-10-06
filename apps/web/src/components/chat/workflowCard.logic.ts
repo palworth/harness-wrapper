@@ -57,9 +57,7 @@ const SETTLED_SUBAGENT: Partial<
   interrupted: "failed",
 };
 
-export function subagentCardState(
-  status: OrchestrationV2Subagent["status"],
-): WorkflowCardAgent["state"] {
+function subagentCardState(status: OrchestrationV2Subagent["status"]): WorkflowCardAgent["state"] {
   return SETTLED_SUBAGENT[status] ?? (status === "pending" ? "queued" : "running");
 }
 
