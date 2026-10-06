@@ -95,32 +95,51 @@ export function VoiceDictationButton(props: {
   }, [props.disabled]);
 
   const begin = (apiKey: string) => {
+    // Handlers are recreated every render, so props.disabled is not stale here.
+    if (props.disabled) return;
     setState("listening");
     const sessionId = ++nextSessionIdRef.current;
     const targetKey = targetKeyRef.current;
     activeSessionIdRef.current = sessionId;
-    sessionRef.current = startDictation(apiKey, {
-      onText: (text, first) => {
-        const buffered = bufferRef.current;
-        bufferRef.current = {
-          text: (buffered?.text ?? "") + text,
-          first: (buffered?.first ?? false) || first,
-          sessionId,
-          targetKey,
-        };
-        frameRef.current ??= requestAnimationFrame(flushBuffer);
-        // rAF is paused while the Electron window is hidden; don't let text sit there.
-        timerRef.current ??= setTimeout(flushBuffer, 250);
-      },
-      onError: (message) =>
-        toastManager.add({ type: "error", title: "Dictation stopped", description: message }),
-      onEnd: () => {
-        flushBuffer(); // deliver anything still queued before reporting the end
-        if (activeSessionIdRef.current === sessionId) activeSessionIdRef.current = 0;
-        sessionRef.current = null;
-        setState("idle");
-      },
-    });
+    try {
+      sessionRef.current = startDictation(apiKey, {
+        onText: (text, first) => {
+          const buffered = bufferRef.current;
+          bufferRef.current = {
+            text: (buffered?.text ?? "") + text,
+            first: (buffered?.first ?? false) || first,
+            sessionId,
+            targetKey,
+          };
+          frameRef.current ??= requestAnimationFrame(flushBuffer);
+          // rAF is paused while the Electron window is hidden; don't let text sit there.
+          timerRef.current ??= setTimeout(flushBuffer, 250);
+        },
+        onError: (message) =>
+          toastManager.add({ type: "error", title: "Dictation stopped", description: message }),
+        onEnd: () => {
+          flushBuffer(); // deliver anything still queued before reporting the end
+          if (activeSessionIdRef.current === sessionId) activeSessionIdRef.current = 0;
+          sessionRef.current = null;
+          setState("idle");
+        },
+      });
+    } catch (error) {
+      // e.g. a key with characters that are invalid in a WebSocket subprotocol
+      activeSessionIdRef.current = 0;
+      sessionRef.current = null;
+      setState("idle");
+      toastManager.add({
+        type: "error",
+        title: "Dictation stopped",
+        description:
+          error instanceof DOMException && error.name === "SyntaxError"
+            ? "Invalid OpenAI API key."
+            : error instanceof Error
+              ? error.message
+              : "Couldn't start dictation.",
+      });
+    }
   };
 
   const openKeyDialog = () => {
