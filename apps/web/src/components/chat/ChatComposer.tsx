@@ -1069,6 +1069,7 @@ function ComposerCommandMenuLayer(props: { anchor: HTMLElement | null; children:
   );
 }
 import { Button } from "../ui/button";
+import { VoiceDictationButton } from "../../fork/VoiceDictationButton";
 import { Select, SelectItem, SelectPopup, SelectValue } from "../ui/select";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { toastManager } from "../ui/toast";
@@ -7468,6 +7469,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 >
                   {showComposerAttachAction ? (
                     <>
+                      <VoiceDictationButton
+                        onText={(text, first) =>
+                          insertComposerText(text, "cursor", { ensureLeadingBoundary: first })
+                        }
+                      />
                       <input
                         ref={attachmentInputRef}
                         type="file"

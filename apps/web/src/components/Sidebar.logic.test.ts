@@ -79,16 +79,16 @@ describe("resolveSidebarRowAccessibility", () => {
     {
       title: "Can you audit the UI?",
       statusLabel: "Working",
-      projectDisplayName: "harness-wrapper",
+      projectDisplayName: "OC-UI",
       isActive: true,
-      expected: { label: "Can you audit the UI?, Working, harness-wrapper", current: "page" },
+      expected: { label: "Can you audit the UI?, Working, OC-UI", current: "page" },
     },
     {
       title: "The audit is done",
       statusLabel: null,
-      projectDisplayName: "harness-wrapper",
+      projectDisplayName: "OC-UI",
       isActive: false,
-      expected: { label: "The audit is done, harness-wrapper", current: undefined },
+      expected: { label: "The audit is done, OC-UI", current: undefined },
     },
     {
       title: "Untitled task",

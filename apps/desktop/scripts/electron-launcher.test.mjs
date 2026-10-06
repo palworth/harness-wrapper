@@ -76,18 +76,18 @@ describe("electron development launcher", () => {
 
   it("keeps the native Electron executable name inside the branded macOS bundle", () => {
     const paths = resolveMacLauncherPaths(
-      "/repo/apps/desktop/.electron-runtime/harness-wrapper (Dev).app",
-      "harness-wrapper (Dev)",
+      "/repo/apps/desktop/.electron-runtime/OC-UI (Dev).app",
+      "OC-UI (Dev)",
     );
 
-    assert.equal(paths.launcherExecutableName, "harness-wrapper (Dev) Launcher");
+    assert.equal(paths.launcherExecutableName, "OC-UI (Dev) Launcher");
     assert.equal(
       paths.launcherBinaryPath,
-      "/repo/apps/desktop/.electron-runtime/harness-wrapper (Dev).app/Contents/MacOS/harness-wrapper (Dev) Launcher",
+      "/repo/apps/desktop/.electron-runtime/OC-UI (Dev).app/Contents/MacOS/OC-UI (Dev) Launcher",
     );
     assert.equal(
       paths.runtimeElectronBinaryPath,
-      "/repo/apps/desktop/.electron-runtime/harness-wrapper (Dev).app/Contents/MacOS/Electron",
+      "/repo/apps/desktop/.electron-runtime/OC-UI (Dev).app/Contents/MacOS/Electron",
     );
 
     const script = makeDevelopmentLauncherScript({
@@ -98,32 +98,32 @@ describe("electron development launcher", () => {
     });
     assert.include(
       script,
-      "exec '/repo/apps/desktop/.electron-runtime/harness-wrapper (Dev).app/Contents/MacOS/Electron'",
+      "exec '/repo/apps/desktop/.electron-runtime/OC-UI (Dev).app/Contents/MacOS/Electron'",
     );
     assert.notInclude(script, "node_modules/electron");
   });
 
   it("declares why the macOS app needs protected access", () => {
-    const values = resolveMacBundleInfoPlistStrings("harness-wrapper (Dev) Launcher");
+    const values = resolveMacBundleInfoPlistStrings("OC-UI (Dev) Launcher");
 
     assert.equal(
       values.NSScreenCaptureUsageDescription,
-      "harness-wrapper captures the active window when you use the snapshot shortcut.",
+      "OC-UI captures the active window when you use the snapshot shortcut.",
     );
     assert.equal(
       values.NSDocumentsFolderUsageDescription,
-      "harness-wrapper reads project files you open in the desktop app.",
+      "OC-UI reads project files you open in the desktop app.",
     );
   });
 
   it("ad-hoc signs the complete development app bundle", () => {
-    assert.deepEqual(resolveMacCodeSignArguments("/runtime/harness-wrapper (Dev).app"), [
+    assert.deepEqual(resolveMacCodeSignArguments("/runtime/OC-UI (Dev).app"), [
       "--force",
       "--deep",
       "--sign",
       "-",
       "--timestamp=none",
-      "/runtime/harness-wrapper (Dev).app",
+      "/runtime/OC-UI (Dev).app",
     ]);
   });
 

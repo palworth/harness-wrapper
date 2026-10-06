@@ -1,5 +1,5 @@
 /**
- * ManagedProjectFolders - the project folders harness-wrapper makes for the user under
+ * ManagedProjectFolders - the project folders OC-UI makes for the user under
  * its data dir, rather than ones the user picks:
  *
  * - `<baseDir>/scratch`: the Scratch project ("No project"), with a folder of
@@ -202,7 +202,7 @@ function namedProjectReadme(name: string): string {
     "",
     `# ${name}`,
     "",
-    "Created in [harness-wrapper](https://t3.codes).",
+    "Created in [OC-UI](https://t3.codes).",
     "",
   ].join("\n");
 }

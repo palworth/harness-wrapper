@@ -72,7 +72,7 @@ export const make = Effect.gen(function* () {
           httpBaseUrl: config.httpBaseUrl.href,
           credential,
           clientMetadata: {
-            label: "harness-wrapper Desktop",
+            label: "OC-UI Desktop",
             deviceType: "desktop",
           },
         }).pipe(

@@ -119,7 +119,7 @@ describe("pull request filters menu", () => {
         {
           id: projectId,
           environmentId,
-          title: "harness-wrapper",
+          title: "OC-UI",
           workspaceRoot: "/work/t3code",
         },
       ],
@@ -145,13 +145,13 @@ describe("pull request filters menu", () => {
         {
           id: projectId,
           environmentId: "env-1" as EnvironmentId,
-          title: "harness-wrapper · one",
+          title: "OC-UI · one",
           workspaceRoot: "/work/t3code-1",
         },
         {
           id: projectId,
           environmentId: "env-2" as EnvironmentId,
-          title: "harness-wrapper · two",
+          title: "OC-UI · two",
           workspaceRoot: "/work/t3code-2",
         },
       ],

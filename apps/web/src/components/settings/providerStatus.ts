@@ -44,8 +44,7 @@ export function getProviderSummary(provider: ServerProvider | undefined) {
     return {
       headline: "Disabled",
       detail:
-        provider.message ??
-        "This provider is installed but disabled for new sessions in harness-wrapper.",
+        provider.message ?? "This provider is installed but disabled for new sessions in OC-UI.",
     };
   }
   if (!provider.installed) {

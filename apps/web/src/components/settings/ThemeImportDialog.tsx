@@ -525,7 +525,7 @@ export function ThemeImportDialog({
                   <div className="min-w-0">
                     <p className="text-sm font-medium">Theme file</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {fileName ?? "Drop harness-wrapper or VS Code .json files"}
+                      {fileName ?? "Drop OC-UI or VS Code .json files"}
                     </p>
                   </div>
                   {chooseButton()}

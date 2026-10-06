@@ -216,7 +216,7 @@ $shim = Join-Path $binDir "t3.cmd"
 # non-ASCII characters in the user's home path.
 [System.IO.File]::WriteAllText($shim, "@echo off`r`n`"$(Join-Path $targetDir 't3.exe')`" %*", (New-Object System.Text.UTF8Encoding $false))
 if ($interactive) { [Console]::Error.Write("`r$esc[2K") }
-[Console]::Error.WriteLine("  ${green}Installed harness-wrapper $version$reset`n")
+[Console]::Error.WriteLine("  ${green}Installed OC-UI $version$reset`n")
 if (($env:PATH -split ";") -notcontains $binDir) {
   Write-Host "  Add $binDir to your PATH, then run ${bold}t3$reset.`n"
 } else {

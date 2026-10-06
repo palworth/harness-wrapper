@@ -1108,7 +1108,7 @@ const program = Effect.gen(function* () {
             rawOutput: {
               action: {
                 type: "search",
-                query: "harness-wrapper",
+                query: "OC-UI",
                 sources: [
                   { type: "url", url: "https://t3.codes" },
                   { type: "url", url: "https://t3.codes" },
@@ -1128,9 +1128,9 @@ const program = Effect.gen(function* () {
             rawInput: { variant: "WebFetch", url: "https://t3.codes" },
             rawOutput: {
               type: "WebFetch",
-              Content: { url: "https://t3.codes", content: "harness-wrapper page" },
+              Content: { url: "https://t3.codes", content: "OC-UI page" },
             },
-            content: [{ type: "content", content: { type: "text", text: "harness-wrapper page" } }],
+            content: [{ type: "content", content: { type: "text", text: "OC-UI page" } }],
           },
           {
             sessionUpdate: "tool_call_update",

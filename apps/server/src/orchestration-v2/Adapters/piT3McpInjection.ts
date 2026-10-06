@@ -118,7 +118,7 @@ export function resolvePiLaunchArgs(launchArgs: string): PiLaunchArgsResolution 
     if (reserved !== undefined) {
       return {
         ok: false,
-        message: `Pi launch argument '${reserved}' is controlled by harness-wrapper and cannot be overridden.`,
+        message: `Pi launch argument '${reserved}' is controlled by OC-UI and cannot be overridden.`,
       };
     }
     if (arg === "--") {
@@ -155,7 +155,7 @@ export function resolvePiLaunchArgs(launchArgs: string): PiLaunchArgsResolution 
     if (arg.startsWith("-")) {
       return {
         ok: false,
-        message: `Pi launch argument '${arg}' is not supported by harness-wrapper.`,
+        message: `Pi launch argument '${arg}' is not supported by OC-UI.`,
       };
     }
     return {

@@ -1,6 +1,6 @@
-# harness-wrapper
+# OC-UI
 
-A personal fork of [pingdotgg/t3code](https://github.com/pingdotgg/t3code) (MIT), renamed and kept
+A personal fork of [pingdotgg/t3code](https://github.com/pingdotgg/t3code) (MIT), branded **OC-UI** and kept
 current with upstream releases.
 
 - Upstream: <https://github.com/pingdotgg/t3code>
@@ -33,18 +33,19 @@ additive files (new components, new scripts, a new workflow) over editing upstre
 
 ### Branding (light rebrand)
 
-Renamed from _T3 Code_ to _harness-wrapper_ in user-visible strings only. Bundle IDs
+Renamed from _T3 Code_ to _OC-UI_ in user-visible strings only (the repo itself is still
+`palworth/harness-wrapper`, the fork's first name). Bundle IDs
 (`com.t3tools.t3code`), the `t3code://` protocol, the `t3` CLI, and data directories are untouched so
 upstream behavior and update channels keep working.
 
-| File                                         | Change                                       |
-| -------------------------------------------- | -------------------------------------------- |
-| `apps/desktop/src/app/DesktopEnvironment.ts` | `APP_BASE_NAME` → `harness-wrapper`          |
-| `apps/web/src/branding.ts`                   | fallback `APP_BASE_NAME` → `harness-wrapper` |
-| `apps/desktop/package.json`                  | `productName` → `harness-wrapper (Alpha)`    |
-| `apps/desktop/scripts/electron-launcher.mjs` | dev/prod display names                       |
-| `apps/web/index.html`                        | document `<title>`                           |
-| `scripts/install.sh`, `scripts/install.ps1`  | "Installed …" banner                         |
+| File                                         | Change                             |
+| -------------------------------------------- | ---------------------------------- |
+| `apps/desktop/src/app/DesktopEnvironment.ts` | `APP_BASE_NAME` → `OC-UI`          |
+| `apps/web/src/branding.ts`                   | fallback `APP_BASE_NAME` → `OC-UI` |
+| `apps/desktop/package.json`                  | `productName` → `OC-UI (Alpha)`    |
+| `apps/desktop/scripts/electron-launcher.mjs` | dev/prod display names             |
+| `apps/web/index.html`                        | document `<title>`                 |
+| `scripts/install.sh`, `scripts/install.ps1`  | "Installed …" banner               |
 
 Tests that assert the old name were updated alongside: `apps/web/src/branding.test.ts`,
 `apps/desktop/src/app/DesktopAppIdentity.test.ts`, `apps/desktop/src/app/DesktopPreReadyPlatform.test.ts`,
@@ -52,7 +53,7 @@ Tests that assert the old name were updated alongside: `apps/web/src/branding.te
 
 ### In-app copy sweep
 
-`scripts/rebrand.sh` rewrites upstream's "T3 Code" wording to "harness-wrapper" across app source
+`scripts/rebrand.sh` rewrites upstream's "T3 Code" wording to "OC-UI" (and the earlier fork name "harness-wrapper") across app source
 (`apps/web/src`, `apps/desktop/src`, `apps/desktop/scripts`, `apps/desktop/gnome-extension`,
 `apps/server/src`, `apps/mobile/src`, `packages`, plus `apps/web/index.html` and two files outside the
 scope — see below). It is idempotent and safe to re-run — that is the point: upstream writes new copy
@@ -60,7 +61,7 @@ constantly, so after a release sync takes upstream's wording, run it again:
 
 ```bash
 ./scripts/rebrand.sh
-git add -A && git commit -m "chore: re-apply harness-wrapper copy"
+git add -A && git commit -m "chore: re-apply OC-UI copy"
 ```
 
 What it does **not** rewrite:
@@ -92,6 +93,41 @@ Never swept (by design, not oversight):
 Matching is case-insensitive over the phrase (`T3 Code`, `T3 CODE`, `t3 code`) and also covers the
 form-encoded spelling (`T3+Code`), which hides inside URL-encoded request bodies — both otherwise
 produce assertions that pass on the plain-text pass and fail in CI.
+
+To rename the app again, change `TO` in `scripts/rebrand.sh`, move the old name into `PREVIOUS`, run it,
+and update the handful of files outside its scope by hand (`scripts/install.*`,
+`scripts/build-desktop-artifact.test.ts`, `apps/desktop/package.json`).
+
+### Typography
+
+`apps/web/src/fork/brand.css` (imported once from `apps/web/src/main.tsx`) sets the default interface
+font to **IBM Plex Sans** and code to **IBM Plex Mono**: an engineered, Palantir-style pairing. The
+fonts are vendored in `apps/web/src/fork/fonts/` (SIL OFL) so the desktop app needs no network. A
+family chosen in Settings → Appearance still overrides it. To try another face, swap the files and
+the `--font-sans` / `--font-mono` values in that one CSS file.
+
+The sidebar header shows `APP_BASE_NAME` as a mono, uppercase, wide-tracked text mark instead of
+upstream's T3 wordmark (`SidebarBrandMark` in `apps/web/src/components/sidebar/SidebarChrome.tsx`). The
+small T3 glyph used as an icon in the timeline and welcome wizard, and the app icons, are still
+upstream's artwork.
+
+### Voice dictation
+
+A mic button sits left of the composer's paperclip (`apps/web/src/fork/VoiceDictationButton.tsx`,
+wired in with a few lines in `components/chat/ChatComposer.tsx`). Click to talk, click again to stop;
+text is typed at the caret while you speak.
+
+- Streams 24 kHz PCM16 to OpenAI's Realtime API (`wss://api.openai.com/v1/realtime?intent=transcription`)
+  with the `gpt-live-transcribe` model and inserts each `…transcription.delta` as it arrives
+  (`apps/web/src/fork/voiceDictation.ts`). Stopping sends `input_audio_buffer.commit` and waits up to
+  5 s for the final transcript.
+- **API key:** read from `VITE_OPENAI_API_KEY` in `apps/web/.env.local` (gitignored by `.env*`). A key
+  entered in the app (right-click the mic) is stored in localStorage under `oc-ui:openai-api-key` and
+  takes precedence. Vite inlines the env key into the web bundle, so never set it for a build you
+  share or host.
+- Override the model with `localStorage.setItem("oc-ui:transcription-model", "gpt-transcribe")`.
+- macOS: `NSMicrophoneUsageDescription` is added in `scripts/build-desktop-artifact.ts` so packaged
+  builds can ask for the mic.
 
 ### CI runners
 

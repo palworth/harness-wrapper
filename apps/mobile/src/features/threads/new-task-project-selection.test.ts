@@ -44,7 +44,7 @@ function makeProject(
 function makeScope(projects: ReadonlyArray<EnvironmentProject>): HomeProjectScope {
   return {
     key: "github.com/t3tools/t3code",
-    title: "harness-wrapper",
+    title: "OC-UI",
     representative: projects[0]!,
     projects,
     projectRefs: projects.map((project) => ({

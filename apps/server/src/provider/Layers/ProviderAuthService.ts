@@ -29,7 +29,7 @@ export const makeProviderAuthService = Effect.gen(function* () {
         instanceId,
         operation,
         detail: instance
-          ? "This provider does not support sign-in in harness-wrapper."
+          ? "This provider does not support sign-in in OC-UI."
           : "This provider instance is no longer available.",
       });
     }

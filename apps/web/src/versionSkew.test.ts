@@ -24,7 +24,7 @@ import {
 } from "./versionSkew";
 
 const MISMATCH_HINT =
-  "Version mismatch. Try syncing the client and server to the same harness-wrapper version.";
+  "Version mismatch. Try syncing the client and server to the same OC-UI version.";
 
 describe("versionSkew", () => {
   it("updates only the proven npm prefix and safely quotes its path", () => {

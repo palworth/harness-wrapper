@@ -1,6 +1,6 @@
 /**
  * Browser import service - lists importable sources and writes their cookies
- * into a harness-wrapper browser profile's Electron partition.
+ * into a OC-UI browser profile's Electron partition.
  *
  * @module BrowserImport
  */

@@ -90,7 +90,7 @@ export async function readCursorAccountUsage(
         : typeof credentialSource === "string"
           ? "Cursor credentials could not be read."
           : cause instanceof CursorKeychainTimeoutError
-            ? "Allow Keychain access on the Mac running harness-wrapper, then refresh."
+            ? "Allow Keychain access on the Mac running OC-UI, then refresh."
             : "Cursor Keychain credentials could not be read.",
     };
   }

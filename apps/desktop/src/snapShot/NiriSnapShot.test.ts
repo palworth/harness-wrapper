@@ -133,11 +133,11 @@ it("does not activate T3 until requested, then matches PID and title", async () 
   const snapshot = await captureNiriWindow(socketPath);
   expect(calls.some((call) => typeof call !== "string" && call.Action.FocusWindow)).toBe(false);
   windows = [
-    { ...window, id: 1, pid: 999, title: "harness-wrapper" },
+    { ...window, id: 1, pid: 999, title: "OC-UI" },
     { ...window, id: 2, pid: process.pid, title: "Other T3" },
-    { ...window, id: 3, pid: process.pid, title: "harness-wrapper" },
+    { ...window, id: 3, pid: process.pid, title: "OC-UI" },
   ];
-  await snapshot.feedback!.activate("harness-wrapper");
+  await snapshot.feedback!.activate("OC-UI");
   expect(calls).toContainEqual({ Action: { FocusWindow: { id: 3 } } });
 });
 
@@ -149,18 +149,18 @@ it("waits for the restored T3 window to map instead of polling", async () => {
     if (request === "EventStream")
       send(socket, {
         WindowOpenedOrChanged: {
-          window: { ...window, id: 4, pid: process.pid, title: "harness-wrapper" },
+          window: { ...window, id: 4, pid: process.pid, title: "OC-UI" },
         },
       });
   };
-  await snapshot.feedback!.activate("harness-wrapper");
+  await snapshot.feedback!.activate("OC-UI");
   expect(calls).toContainEqual({ Action: { FocusWindow: { id: 4 } } });
 });
 
 it("rejects ambiguous activation targets", async () => {
   const snapshot = await captureNiriWindow(socketPath);
-  windows = [1, 2].map((id) => ({ ...window, id, pid: process.pid, title: "harness-wrapper" }));
-  await expect(snapshot.feedback!.activate("harness-wrapper")).rejects.toThrow("More than one");
+  windows = [1, 2].map((id) => ({ ...window, id, pid: process.pid, title: "OC-UI" }));
+  await expect(snapshot.feedback!.activate("OC-UI")).rejects.toThrow("More than one");
 });
 
 it("cancels pending activation when capture feedback is closed", async () => {
@@ -171,9 +171,7 @@ it("cancels pending activation when capture feedback is closed", async () => {
     await original(request, socket);
     if (request === "EventStream") started.resolve();
   };
-  const activation = expect(snapshot.feedback!.activate("harness-wrapper")).rejects.toThrow(
-    "cancelled",
-  );
+  const activation = expect(snapshot.feedback!.activate("OC-UI")).rejects.toThrow("cancelled");
   await started.promise;
   snapshot.feedback!.close();
   await activation;

@@ -63,7 +63,7 @@ vi.mock("electron", () => ({
     getSystemLocale: getSystemLocaleMock,
     getVersion: getVersionMock,
     isPackaged: true,
-    name: "harness-wrapper",
+    name: "OC-UI",
     on: onMock,
     quit: quitMock,
     relaunch: relaunchMock,
