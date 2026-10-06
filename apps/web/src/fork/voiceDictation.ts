@@ -17,10 +17,11 @@ const SAMPLE_RATE = 24_000;
 // How long to wait for the final transcript after the user stops talking.
 const FINALIZE_TIMEOUT_MS = 5_000;
 
-// VITE_OPENAI_API_KEY from apps/web/.env.local (gitignored) is the default; a key saved in
-// the app takes precedence. Vite inlines it into the bundle, so never set it for a shared build.
-const ENV_API_KEY =
-  (import.meta.env as Record<string, string | undefined>).VITE_OPENAI_API_KEY?.trim() ?? "";
+// VITE_OPENAI_API_KEY from apps/web/.env.local (gitignored) is the default in dev builds only;
+// a key saved in the app takes precedence. Gating on DEV lets production builds drop the key.
+const ENV_API_KEY = import.meta.env.DEV
+  ? ((import.meta.env as Record<string, string | undefined>).VITE_OPENAI_API_KEY?.trim() ?? "")
+  : "";
 
 export function readOpenAiApiKey(): string {
   return localStorage.getItem(API_KEY_STORAGE_KEY)?.trim() || ENV_API_KEY;
@@ -43,6 +44,8 @@ export interface DictationCallbacks {
 export interface DictationSession {
   /** Stop listening and flush the final transcript. */
   stop: () => void;
+  /** Tear everything down immediately: release the mic, close the socket, fire no more callbacks. */
+  cancel: () => void;
 }
 
 function pcm16Base64(samples: Float32Array): string {
@@ -66,8 +69,10 @@ export function startDictation(apiKey: string, callbacks: DictationCallbacks): D
     `openai-insecure-api-key.${apiKey}`,
   ]);
   const pending: string[] = [];
-  let audio: { context: AudioContext; stream: MediaStream } | null = null;
+  let micStream: MediaStream | null = null;
+  let micContext: AudioContext | null = null;
   let ended = false;
+  let silent = false;
   let stopping = false;
   let sentAudio = false;
   let sawText = false;
@@ -78,10 +83,10 @@ export function startDictation(apiKey: string, callbacks: DictationCallbacks): D
   };
 
   const releaseMic = () => {
-    if (!audio) return;
-    for (const track of audio.stream.getTracks()) track.stop();
-    void audio.context.close();
-    audio = null;
+    for (const track of micStream?.getTracks() ?? []) track.stop();
+    micStream = null;
+    if (micContext) void micContext.close().catch(() => undefined);
+    micContext = null;
   };
 
   const end = (error?: string) => {
@@ -90,6 +95,7 @@ export function startDictation(apiKey: string, callbacks: DictationCallbacks): D
     clearTimeout(finalizeTimer);
     releaseMic();
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) ws.close();
+    if (silent) return;
     if (error) callbacks.onError(error);
     callbacks.onEnd();
   };
@@ -114,6 +120,7 @@ export function startDictation(apiKey: string, callbacks: DictationCallbacks): D
   });
 
   ws.addEventListener("message", (message) => {
+    if (ended) return;
     let event: { type?: string; delta?: string; error?: { message?: string } };
     try {
       event = JSON.parse(String(message.data));
@@ -146,10 +153,13 @@ export function startDictation(apiKey: string, callbacks: DictationCallbacks): D
   });
 
   const finalize = () => {
-    if (ws.readyState !== WebSocket.OPEN) return; // the open handler calls back here
-    if (!sentAudio) return end();
-    send({ type: "input_audio_buffer.commit" });
+    if (ended) return;
+    if (!sentAudio) return end(); // nothing to transcribe; also closes a still-connecting socket
+    clearTimeout(finalizeTimer);
+    // Bounds finalization in every socket state, including one that never finishes connecting.
     finalizeTimer = setTimeout(() => end(), FINALIZE_TIMEOUT_MS);
+    if (ws.readyState === WebSocket.OPEN) send({ type: "input_audio_buffer.commit" });
+    // Otherwise still connecting: the open handler flushes the audio and calls back here.
   };
 
   void (async () => {
@@ -157,13 +167,15 @@ export function startDictation(apiKey: string, callbacks: DictationCallbacks): D
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
       });
+      // Tracked immediately so every failure path below releases the mic.
+      micStream = stream;
       if (ended || stopping) {
-        for (const track of stream.getTracks()) track.stop();
+        releaseMic();
         return;
       }
       // The context resamples the mic to the rate the API expects.
       const context = new AudioContext({ sampleRate: SAMPLE_RATE });
-      audio = { context, stream };
+      micContext = context;
       const source = context.createMediaStreamSource(stream);
       // ScriptProcessor keeps this to one file: an AudioWorklet would need its own module URL.
       const processor = context.createScriptProcessor(4096, 1, 1);
@@ -178,6 +190,7 @@ export function startDictation(apiKey: string, callbacks: DictationCallbacks): D
       source.connect(processor);
       processor.connect(context.destination);
     } catch (error) {
+      releaseMic();
       end(
         error instanceof DOMException && error.name === "NotAllowedError"
           ? "Microphone access was denied."
@@ -192,6 +205,12 @@ export function startDictation(apiKey: string, callbacks: DictationCallbacks): D
       stopping = true;
       releaseMic();
       finalize();
+    },
+    cancel: () => {
+      if (ended) return;
+      silent = true;
+      stopping = true;
+      end();
     },
   };
 }

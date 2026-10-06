@@ -65,7 +65,7 @@ while IFS= read -r file; do
   if is_excluded "$file"; then continue; fi
   # Lines carrying a "brand-keep" marker name old installs on disk or what the
   # outside world really emits, and must keep upstream's spelling forever.
-  perl -pi -e "s/\b\Q$FROM_CI\E\b/$TO/gi unless /brand-keep/; s/\b\Q$ENCODED_CI\E\b/$TO/gi unless /brand-keep/; s{(?<!palworth/)\Q$PREVIOUS\E\b}{$TO}g unless /brand-keep/" "$file"
+  perl -pi -e "s/\b\Q$FROM_CI\E\b/$TO/gi unless /brand-keep/; s/\b\Q$ENCODED_CI\E\b/$TO/gi unless /brand-keep/; s{(?<!palworth/)\Q$PREVIOUS\E\b}{$TO}gi unless /brand-keep/" "$file"
   changed=$((changed + 1))
 done < <(grep -rIli -e "$FROM_CI" -e "$ENCODED_CI" -e "$PREVIOUS" "${SCOPE[@]}" "${EXTRA[@]}" --exclude-dir=node_modules 2>/dev/null || true)
 

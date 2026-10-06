@@ -7470,6 +7470,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                   {showComposerAttachAction ? (
                     <>
                       <VoiceDictationButton
+                        targetKey={composerDraftTargetKey}
+                        disabled={
+                          isConnecting ||
+                          isComposerApprovalState ||
+                          projectSelectionRequired ||
+                          isChoiceOnlyPendingQuestion ||
+                          activePendingIsResponding
+                        }
                         onText={(text, first) =>
                           insertComposerText(text, "cursor", { ensureLeadingBoundary: first })
                         }

@@ -121,10 +121,10 @@ text is typed at the caret while you speak.
   with the `gpt-live-transcribe` model and inserts each `…transcription.delta` as it arrives
   (`apps/web/src/fork/voiceDictation.ts`). Stopping sends `input_audio_buffer.commit` and waits up to
   5 s for the final transcript.
-- **API key:** read from `VITE_OPENAI_API_KEY` in `apps/web/.env.local` (gitignored by `.env*`). A key
+- **API key:** in dev (`import.meta.env.DEV`) read from `VITE_OPENAI_API_KEY` in `apps/web/.env.local`
+  (gitignored by `.env*`); production builds ignore it, so the key is never bundled. A key
   entered in the app (right-click the mic) is stored in localStorage under `oc-ui:openai-api-key` and
-  takes precedence. Vite inlines the env key into the web bundle, so never set it for a build you
-  share or host.
+  takes precedence (and is the only source in production builds).
 - Override the model with `localStorage.setItem("oc-ui:transcription-model", "gpt-transcribe")`.
 - macOS: `NSMicrophoneUsageDescription` is added in `scripts/build-desktop-artifact.ts` so packaged
   builds can ask for the mic.

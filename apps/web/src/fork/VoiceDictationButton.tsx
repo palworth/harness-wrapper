@@ -22,6 +22,8 @@ export function VoiceDictationButton(props: {
   /** Type transcribed text at the composer caret. */
   onText: (text: string, first: boolean) => void;
   disabled?: boolean;
+  /** Identifies the thread/draft the composer is bound to; changing it cancels dictation. */
+  targetKey: string;
 }) {
   const [state, setState] = useState<"idle" | "listening" | "finishing">("idle");
   const [keyDialogOpen, setKeyDialogOpen] = useState(false);
@@ -31,12 +33,47 @@ export function VoiceDictationButton(props: {
   const onTextRef = useRef(props.onText);
   onTextRef.current = props.onText;
 
-  useEffect(() => () => sessionRef.current?.stop(), []);
+  // Deltas are buffered and inserted at most once per frame: the composer only syncs its caret
+  // with the prompt after React commits, so back-to-back inserts would land at a stale caret.
+  const bufferRef = useRef<{ text: string; first: boolean } | null>(null);
+  const frameRef = useRef<number | null>(null);
+
+  const dropBuffer = () => {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    frameRef.current = null;
+    bufferRef.current = null;
+  };
+
+  const flushBuffer = () => {
+    frameRef.current = null;
+    const buffered = bufferRef.current;
+    bufferRef.current = null;
+    if (buffered) onTextRef.current(buffered.text, buffered.first);
+  };
+
+  const cancelSession = () => {
+    sessionRef.current?.cancel();
+    sessionRef.current = null;
+    dropBuffer();
+    setState("idle");
+  };
+  const cancelSessionRef = useRef(cancelSession);
+  cancelSessionRef.current = cancelSession;
+
+  // A session belongs to the thread/draft it started in: cancel when that changes and on unmount.
+  useEffect(() => () => cancelSessionRef.current(), [props.targetKey]);
 
   const begin = (apiKey: string) => {
     setState("listening");
     sessionRef.current = startDictation(apiKey, {
-      onText: (text, first) => onTextRef.current(text, first),
+      onText: (text, first) => {
+        const buffered = bufferRef.current;
+        bufferRef.current = {
+          text: (buffered?.text ?? "") + text,
+          first: (buffered?.first ?? false) || first,
+        };
+        frameRef.current ??= requestAnimationFrame(flushBuffer);
+      },
       onError: (message) =>
         toastManager.add({ type: "error", title: "Dictation stopped", description: message }),
       onEnd: () => {
