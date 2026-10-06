@@ -1,5 +1,7 @@
 import { ThreadHoverCardPopup } from "../ThreadHoverCard";
 import { AgentElapsed } from "./AgentElapsed";
+import { WorkflowCard } from "./WorkflowCard";
+import { workflowCardModel } from "./workflowCard.logic";
 import { projectedSubagentsToRuntime } from "@t3tools/client-runtime/state/subagentRuntime";
 import type { ReactNode } from "react";
 import { useThreadShell, useProject } from "../../state/entities";
@@ -15,6 +17,7 @@ import { Fragment } from "react";
 import { formatSubagentDisplayTitle } from "@t3tools/client-runtime/state/subagent-display";
 import {
   ProviderDriverKind,
+  isOrchestrationV2WorkActive,
   type OrchestrationV2Notification,
   type OrchestrationV2TurnItem,
   type ProviderInstanceId,
@@ -280,12 +283,12 @@ function isoOrNull(value: DateTime.Utc | null | undefined): string | null {
   return value ? DateTime.formatIso(value) : null;
 }
 
-export function SubagentElapsed({ agent }: { agent: Parameters<typeof AgentElapsed>[0]["agent"] }) {
+function SubagentElapsed({ agent }: { agent: Parameters<typeof AgentElapsed>[0]["agent"] }) {
   return <AgentElapsed agent={agent} />;
 }
 
 /** Round provider tile with the agents panel's status dot; rings let a header stack overlap. */
-export function SubagentAvatar({
+function SubagentAvatar({
   driver,
   provider,
   status,
@@ -417,6 +420,19 @@ function SubagentTimelineLink(props: {
     environmentThreadDetails.threadAtom(props.parentRef),
     (thread) => thread?.projection.subagents.find((agent) => agent.id === props.subagentId) ?? null,
   );
+  if (agent?.workflow !== undefined && props.event === undefined) {
+    return (
+      <WorkflowCard
+        model={workflowCardModel(agent)}
+        timing={{
+          status: isOrchestrationV2WorkActive(agent.status) ? "running" : "completed",
+          startedAt: isoOrNull(agent.startedAt),
+          completedAt: isoOrNull(agent.completedAt),
+        }}
+        onOpenThread={props.onOpenThread}
+      />
+    );
+  }
   const threadId = props.threadId;
   const liveStatus = agent?.status ?? props.status;
   const status = props.event ? props.event.status : liveStatus;

@@ -50,10 +50,7 @@ import {
   turnItemNeedsDetailFetch,
 } from "@t3tools/client-runtime/work-log/item-detail";
 import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
-import {
-  subagentGroupSummary,
-  summarizeSubagentStatuses,
-} from "@t3tools/client-runtime/state/subagent-display";
+import { formatSubagentDisplayTitle } from "@t3tools/client-runtime/state/subagent-display";
 
 const NOOP_USE_ARTIFACT_TEMPLATE = () => {};
 const NOOP_OPEN_ATTACHMENT = (_attachment: ChatFileAttachment) => {};
@@ -265,12 +262,11 @@ import {
   formatUpcomingTimestamp,
 } from "../../timestampFormat";
 import { FetchedToolOutput, V2ItemInspector } from "./V2ItemInspector";
+import { WorkflowCard } from "./WorkflowCard";
+import { subagentGroupCardModel } from "./workflowCard.logic";
 import { useV2ItemSupport } from "../../state/v2ItemSupport";
-import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "../ui/collapsible";
 import {
   isV2LifecycleItem,
-  SubagentAvatar,
-  SubagentElapsed,
   SubagentNotificationLink,
   V2LifecycleRow,
   type HandoffTimelineRun,
@@ -2997,6 +2993,10 @@ function subagentGroupTiming(
   };
 }
 
+function isoOrNull(value: DateTime.Utc | null | undefined): string | null {
+  return value ? DateTime.formatIso(value) : null;
+}
+
 const V2SubagentGroup = memo(function V2SubagentGroup({
   row,
 }: {
@@ -3004,9 +3004,6 @@ const V2SubagentGroup = memo(function V2SubagentGroup({
 }) {
   const ctx = use(TimelineRowCtx);
   const groupId = `subagent-group:${row.id}`;
-  const [expanded, setExpanded] = useState(() =>
-    ctx.workGroupViewState.expandedEntries.has(groupId),
-  );
   const members = (row.subagents ?? [row.projectedItem]).flatMap(({ item }) =>
     item.type === "subagent" ? [item] : [],
   );
@@ -3016,96 +3013,62 @@ const V2SubagentGroup = memo(function V2SubagentGroup({
     ),
     (thread) => thread?.projection.subagents,
   );
-  const agents = members.map((item) => {
-    const live = liveAgents?.find((agent) => agent.id === item.subagentId);
-    return {
-      item,
+  const agents = members.map((item) => ({
+    item,
+    live: liveAgents?.find((agent) => agent.id === item.subagentId),
+  }));
+  const lifecycleRow = (item: (typeof members)[number]) => (
+    <V2LifecycleRow
+      environmentId={ctx.activeThreadEnvironmentId}
+      key={item.id}
+      item={item}
+      createdAt={row.createdAt}
+      timestampFormat={ctx.timestampFormat}
+      providerStatuses={ctx.providerStatuses}
+      runs={ctx.runs}
+      onOpenThread={ctx.onOpenThread}
+    />
+  );
+  // A workflow run already draws its own card; stack those rather than nesting cards.
+  if (agents.some(({ live }) => live?.workflow !== undefined)) {
+    return (
+      <WorkLogBlock continues={row.continuesWorkLog}>{members.map(lifecycleRow)}</WorkLogBlock>
+    );
+  }
+  const timing = subagentGroupTiming(
+    agents.map(({ item, live }) => ({
       status: live?.status ?? item.status,
       startedAt: live?.startedAt ?? item.startedAt,
       completedAt: live?.completedAt ?? item.completedAt,
-    };
-  });
-  const summary = subagentGroupSummary(agents);
-  const label = `${members.length} ${members.length === 1 ? "subagent" : "subagents"}`;
-  const statusSummary = summarizeSubagentStatuses(agents.map(({ status }) => status));
-  const toggleExpanded = (open: boolean) => {
-    ctx.onToggleWorkEntry(row.id, expanded);
-    if (open) ctx.workGroupViewState.expandedEntries.add(groupId);
-    else ctx.workGroupViewState.expandedEntries.delete(groupId);
-    setExpanded(open);
-  };
+    })),
+  );
+  const model = subagentGroupCardModel(
+    agents.map(({ item, live }) => ({
+      id: item.id,
+      title: formatSubagentDisplayTitle(live?.title ?? item.title ?? "Subagent"),
+      model: live?.model ?? null,
+      status: live?.status ?? item.status,
+      startedAt: isoOrNull(live?.startedAt ?? item.startedAt),
+      completedAt: isoOrNull(live?.completedAt ?? item.completedAt),
+      usage: live?.usage,
+      progress: live?.progress ?? item.progress ?? null,
+      result: live?.result ?? item.result,
+      childThreadId: live?.childThreadId ?? item.childThreadId,
+    })),
+  );
   return (
     <WorkLogBlock continues={row.continuesWorkLog}>
-      <Collapsible open={expanded} onOpenChange={toggleExpanded} data-subagent-group>
-        <CollapsibleTrigger
-          aria-label={label}
-          aria-description={statusSummary}
-          className={cn(
-            "flex w-full min-w-0 items-center gap-3 py-2 text-left transition-opacity hover:opacity-100",
-            expanded || summary.active
-              ? "text-foreground opacity-100"
-              : "text-muted-foreground opacity-55",
-          )}
-        >
-          <span className="flex shrink-0 items-center -space-x-1.5" aria-hidden>
-            {agents.slice(0, 3).map(({ item, status }) => (
-              <SubagentAvatar
-                key={item.id}
-                driver={item.driver}
-                provider={ctx.providerStatuses.find(
-                  (provider) => provider.instanceId === item.providerInstanceId,
-                )}
-                status={agents.length === 1 ? status : undefined}
-              />
-            ))}
-            {agents.length > 3 ? (
-              <span className="inline-flex size-6 items-center justify-center rounded-full bg-muted text-3xs font-medium text-muted-foreground ring-2 ring-background">
-                +{agents.length - 3}
-              </span>
-            ) : null}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-xs font-semibold">{label}</span>
-            <span
-              className={cn(
-                "block truncate text-3xs text-muted-foreground",
-                summary.active ? "text-info" : summary.failed && "text-destructive",
-              )}
-            >
-              {statusSummary}
-            </span>
-          </span>
-          <span className="shrink-0 font-mono text-3xs text-muted-foreground">
-            <SubagentElapsed agent={subagentGroupTiming(agents)} />
-          </span>
-          <ChevronDownIcon
-            aria-hidden
-            className={cn(
-              "size-3.5 shrink-0 text-muted-foreground transition-transform",
-              expanded && "rotate-180",
-            )}
-          />
-        </CollapsibleTrigger>
-        {/* Virtualized rows must settle before disclosure scroll anchoring resumes. */}
-        <CollapsiblePanel animate={false}>
-          {expanded ? (
-            <div className="mt-1 mb-1 rounded-lg border border-border/60 bg-card/30 p-1">
-              {members.map((item) => (
-                <V2LifecycleRow
-                  environmentId={ctx.activeThreadEnvironmentId}
-                  key={item.id}
-                  item={item}
-                  createdAt={row.createdAt}
-                  timestampFormat={ctx.timestampFormat}
-                  providerStatuses={ctx.providerStatuses}
-                  runs={ctx.runs}
-                  onOpenThread={ctx.onOpenThread}
-                />
-              ))}
-            </div>
-          ) : null}
-        </CollapsiblePanel>
-      </Collapsible>
+      <WorkflowCard
+        model={model}
+        timing={timing}
+        onOpenThread={ctx.onOpenThread}
+        defaultExpanded={ctx.workGroupViewState.expandedEntries.has(groupId) || undefined}
+        onExpandedChange={(open) => {
+          ctx.onToggleWorkEntry(row.id, !open);
+          if (open) ctx.workGroupViewState.expandedEntries.add(groupId);
+          else ctx.workGroupViewState.expandedEntries.delete(groupId);
+        }}
+      />
     </WorkLogBlock>
   );
 });

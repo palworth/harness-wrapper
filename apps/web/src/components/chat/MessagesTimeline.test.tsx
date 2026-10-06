@@ -2043,9 +2043,9 @@ describe("MessagesTimeline", () => {
           preview: "Audited 12 packages",
         },
       ] as const
-    ).flatMap((scenario) => [1, 2].map((count) => ({ ...scenario, count }))),
+    ).map((scenario) => ({ ...scenario, count: 1 })),
   )(
-    "shows $count $status subagents with '$preview', grouping only multiple agents",
+    "shows a $status subagent with '$preview' as a single row",
     async ({ status, progress, result, preview, count }) => {
       activityTestState.expandedRuns = true;
       activityTestState.subagentTooltips = true;
@@ -2110,12 +2110,7 @@ describe("MessagesTimeline", () => {
           renderer!.root.findAll(
             (node) => node.type === "button" && node.props["aria-label"] === "Open Package audit",
           );
-        if (count > 1) {
-          expect(child()).toHaveLength(0);
-          await act(() => group().props.onClick({ nativeEvent: new Event("click") }));
-        } else {
-          expect(group()).toBeUndefined();
-        }
+        expect(group()).toBeUndefined();
         expect(child()).toHaveLength(count);
         const content = renderer!.root
           .findAll((node) => typeof node.type === "string")
@@ -2127,16 +2122,110 @@ describe("MessagesTimeline", () => {
         if (progress && progress !== preview) expect(content).not.toContain(progress);
         await act(() => child()[0]!.props.onClick());
         expect(onOpenThread).toHaveBeenCalledWith("thread-subagent-1");
-        if (count > 1) {
-          await act(() => group().props.onClick({ nativeEvent: new Event("click") }));
-          expect(child()).toHaveLength(0);
-        }
       } finally {
         await act(() => renderer?.unmount());
         vi.stubGlobal("HTMLElement", undefined);
       }
     },
   );
+
+  it("shows subagents launched together as a workflow card with expandable rows", async () => {
+    activityTestState.expandedRuns = true;
+    vi.stubGlobal("HTMLElement", ElementStub);
+    window.HTMLElement = ElementStub as typeof HTMLElement;
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.stubGlobal("requestAnimationFrame", () => 0);
+    vi.stubGlobal("cancelAnimationFrame", () => {});
+    const onOpenThread = vi.fn();
+    const members = [
+      { status: "completed", title: "Audit packages", progress: "Reading", result: "No issues." },
+      { status: "running", title: "Fix lint", progress: "Editing files", result: null },
+    ] as const;
+    let renderer: ReactTestRenderer | undefined;
+    try {
+      await act(() => {
+        renderer = create(
+          <MessagesTimeline
+            {...buildProps()}
+            onOpenThread={onOpenThread}
+            timelineEntries={members.map((member, index) => ({
+              id: `subagent-card-${index}`,
+              kind: "event",
+              createdAt: MESSAGE_CREATED_AT,
+              projectedItem: {
+                position: 0,
+                visibility: "local",
+                sourceThreadId: "thread-1",
+                sourceItemId: `subagent-card-${index}`,
+                item: {
+                  id: `subagent-card-${index}`,
+                  threadId: "thread-1",
+                  runId: "run-1",
+                  nodeId: `node-card-${index}`,
+                  providerThreadId: "provider-thread-1",
+                  providerTurnId: "provider-turn-1",
+                  nativeItemRef: null,
+                  parentItemId: null,
+                  ordinal: 1,
+                  status: member.status,
+                  title: member.title,
+                  startedAt: null,
+                  completedAt: null,
+                  updatedAt: {},
+                  type: "subagent",
+                  subagentId: `node-card-${index}`,
+                  origin: "provider_native",
+                  driver: "claudeAgent",
+                  providerInstanceId: "claudeAgent",
+                  childThreadId: `thread-card-${index}`,
+                  prompt: "Do the work",
+                  progress: member.progress,
+                  result: member.result,
+                },
+              } as never,
+            }))}
+          />,
+        );
+      });
+      const text = () =>
+        renderer!.root
+          .findAll((node) => typeof node.type === "string")
+          .flatMap((node) => node.children.filter((child) => typeof child === "string"))
+          .join(" ");
+      const trigger = () =>
+        renderer!.root.findAll(
+          (node) => node.type === "button" && node.props["aria-label"] === "2 subagents: Running",
+        )[0];
+      const rows = () =>
+        renderer!.root.findAll(
+          (node) => node.type === "li" && node.props["data-workflow-agent-state"] !== undefined,
+        );
+      expect(trigger()).toBeDefined();
+      // In flight, so the card starts open with one row per subagent.
+      expect(rows().map((row) => row.props["data-workflow-agent-state"])).toEqual([
+        "done",
+        "running",
+      ]);
+      expect(text()).toContain("1/2 agents");
+      expect(text()).toContain("Editing files");
+      expect(text()).not.toContain("No issues.");
+
+      const rowButton = rows()[0]!.findByType("button");
+      await act(() => rowButton.props.onClick());
+      expect(text()).toContain("No issues.");
+      const open = renderer!.root.findAll(
+        (node) => node.type === "button" && node.children.includes("Open agent thread"),
+      )[0]!;
+      await act(() => open.props.onClick());
+      expect(onOpenThread).toHaveBeenCalledWith("thread-card-0");
+
+      await act(() => trigger()!.props.onClick({ nativeEvent: new Event("click") }));
+      expect(rows()).toHaveLength(0);
+    } finally {
+      await act(() => renderer?.unmount());
+      vi.stubGlobal("HTMLElement", undefined);
+    }
+  });
 
   it("renders V2 provider retries in the normal work log", () => {
     activityTestState.expanded = true;

@@ -6471,6 +6471,170 @@ describe("ClaudeAdapterV2 background wake turns", () => {
     ),
   );
 
+  const encodeWorkflowRunJson = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
+  it.effect("carries live workflow phases, agents, and usage on the workflow's subagent", () =>
+    Effect.scoped(
+      Effect.gen(function* () {
+        const TASK_ID = "task-workflow";
+        const TOOL_USE_ID = "toolu-workflow";
+        // Claude Code saves the finished run; it knows about an agent the live ticks missed.
+        const fileSystem = yield* FileSystem.FileSystem;
+        const configDir = yield* fileSystem.makeTempDirectoryScoped();
+        const workflowsDir = `${configDir}/projects/-some-project/${WAKE_NATIVE_SESSION}/workflows`;
+        yield* fileSystem.makeDirectory(workflowsDir, { recursive: true });
+        yield* fileSystem.writeFileString(
+          `${workflowsDir}/wf_review.json`,
+          encodeWorkflowRunJson({
+            taskId: TASK_ID,
+            workflowName: "review-changes",
+            phases: [{ title: "Review", detail: "find bugs" }, { title: "Write" }],
+            workflowProgress: [
+              { type: "workflow_phase", index: 1, title: "Review" },
+              { type: "workflow_phase", index: 2, title: "Write" },
+              {
+                type: "workflow_agent",
+                index: 1,
+                label: "review:bugs",
+                phaseIndex: 1,
+                state: "done",
+                startedAt: 1,
+              },
+              {
+                type: "workflow_agent",
+                index: 2,
+                label: "write",
+                phaseIndex: 2,
+                state: "done",
+                startedAt: 2,
+              },
+              {
+                type: "workflow_agent",
+                index: 3,
+                label: "polish",
+                phaseIndex: 2,
+                state: "done",
+                startedAt: 3,
+              },
+            ],
+            totalTokens: 4200,
+            totalToolCalls: 7,
+            durationMs: 9000,
+          }),
+        );
+        const harness = yield* makeWakeHarnessWithOptions({
+          environment: { CLAUDE_CONFIG_DIR: configDir },
+        });
+        const now = yield* DateTime.now;
+        yield* harness.runtime.startTurn(
+          makeClaudeTestTurnInput({
+            threadId: harness.threadId,
+            providerThread: harness.providerThread,
+            now,
+            attemptId: RunAttemptId.make("attempt-claude-workflow"),
+            text: "Run the review workflow.",
+            attachments: [],
+          }),
+        );
+        const progressFrame = (uuid: string, writerState: string, tokens: number) =>
+          claudeSdkFrame({
+            type: "system",
+            subtype: "task_progress",
+            task_id: TASK_ID,
+            tool_use_id: TOOL_USE_ID,
+            description: "",
+            usage: { total_tokens: tokens, tool_uses: 3, duration_ms: 1200 },
+            workflow_progress: [
+              { type: "workflow_phase", index: 1, title: "Review" },
+              { type: "workflow_phase", index: 2, title: "Write" },
+              {
+                type: "workflow_agent",
+                index: 1,
+                label: "review:bugs",
+                phaseIndex: 1,
+                model: "claude-sonnet-5-5",
+                state: "done",
+                startedAt: 1790921219807,
+                tokens: 1200,
+              },
+              {
+                type: "workflow_agent",
+                index: 2,
+                label: "write",
+                phaseIndex: 2,
+                state: writerState,
+                startedAt: writerState === "queued" ? undefined : 1790921229807,
+              },
+            ],
+            uuid,
+            session_id: WAKE_NATIVE_SESSION,
+          });
+        const frames = [
+          claudeSdkFrame({
+            type: "system",
+            subtype: "task_started",
+            task_id: TASK_ID,
+            tool_use_id: TOOL_USE_ID,
+            description: "Review the diff",
+            task_type: "local_workflow",
+            workflow_name: "review-changes",
+            uuid: "00000000-0000-4000-8000-000000000401",
+            session_id: WAKE_NATIVE_SESSION,
+          }),
+          progressFrame("00000000-0000-4000-8000-000000000402", "queued", 100),
+          // The same snapshot again is not a change.
+          progressFrame("00000000-0000-4000-8000-000000000403", "queued", 100),
+          progressFrame("00000000-0000-4000-8000-000000000404", "running", 900),
+          makeSubagentNotificationFrame({
+            taskId: TASK_ID,
+            toolUseId: TOOL_USE_ID,
+            summary: "Workflow finished.",
+            uuid: "00000000-0000-4000-8000-000000000405",
+          }),
+          makeResultFrame({
+            uuid: "00000000-0000-4000-8000-000000000406",
+            result: "Reviewed.",
+          }),
+        ];
+        for (const frame of frames) {
+          yield* Queue.offer(harness.sdkMessages, frame);
+        }
+        yield* awaitUntil(() => harness.terminalEvents().length === 1, "turn terminal");
+
+        const updates = harness.events.flatMap((event) =>
+          event.type === "subagent.updated" && event.subagent.nativeTaskRef?.nativeId === TASK_ID
+            ? [event.subagent]
+            : [],
+        );
+        assert.isNotEmpty(updates);
+        // Seeded on task_started so the card shows before the first snapshot.
+        assert.deepEqual(updates[0]?.workflow, { name: "review-changes", phases: [], agents: [] });
+        const writerStates = updates.map(
+          (subagent) => subagent.workflow?.agents.find((agent) => agent.index === 2)?.state,
+        );
+        assert.deepEqual(
+          writerStates.filter((state) => state !== undefined),
+          ["queued", "running", "done"],
+        );
+        const final = updates.at(-1);
+        assert.equal(final?.status, "completed");
+        assert.equal(final?.workflow?.name, "review-changes");
+        assert.deepEqual(final?.workflow?.phases, [
+          { index: 1, title: "Review", detail: "find bugs" },
+          { index: 2, title: "Write", detail: null },
+        ]);
+        assert.deepEqual(
+          final?.workflow?.agents.map((agent) => [agent.label, agent.state, agent.phaseIndex]),
+          [
+            ["review:bugs", "done", 1],
+            ["write", "done", 2],
+            ["polish", "done", 2],
+          ],
+        );
+        assert.deepEqual(final?.usage, { totalTokens: 4200, toolUses: 7, durationMs: 9000 });
+      }).pipe(Effect.provide(Layer.merge(IdAllocator.layer, NodeServices.layer))),
+    ),
+  );
+
   it.effect.each(["requested", "observed-before", "observed-after", "inherit", "unknown"] as const)(
     "records the subagent model from %s without inheriting the parent override",
     (source) =>

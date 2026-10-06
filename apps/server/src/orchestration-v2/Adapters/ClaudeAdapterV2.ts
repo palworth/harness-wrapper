@@ -58,6 +58,8 @@ import {
   type OrchestrationV2RuntimeRequest,
   type OrchestrationV2UserInputQuestion,
   type OrchestrationV2Subagent,
+  type OrchestrationV2SubagentUsage,
+  type OrchestrationV2WorkflowProgress,
   type OrchestrationV2TurnItem,
   type OrchestrationV2WebSearchResult,
   type ProviderApprovalDecision,
@@ -69,6 +71,13 @@ import {
   type ThreadId,
 } from "@t3tools/contracts";
 
+import {
+  claudeSubagentUsage,
+  parseClaudeWorkflowProgress,
+  readClaudeWorkflowRunSnapshot,
+  sameWorkflowProgress,
+} from "./claudeWorkflowProgress.ts";
+import * as NodeOS from "node:os";
 import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Crypto from "effect/Crypto";
@@ -4006,6 +4015,8 @@ export function makeClaudeAdapterV2(
           readonly owner?: ActiveClaudeSubagent;
           readonly progress?: string;
           readonly result?: string;
+          readonly usage?: OrchestrationV2SubagentUsage;
+          readonly workflow?: OrchestrationV2WorkflowProgress;
           readonly status: Extract<
             OrchestrationV2ExecutionNode["status"],
             "running" | "completed" | "failed" | "cancelled"
@@ -4125,6 +4136,8 @@ export function makeClaudeAdapterV2(
             ...(input.model === undefined ? {} : { model: input.model }),
             ...(input.progress === undefined ? {} : { progress: input.progress }),
             ...(input.result === undefined ? {} : { result: input.result }),
+            ...(input.usage === undefined ? {} : { usage: input.usage }),
+            ...(input.workflow === undefined ? {} : { workflow: input.workflow }),
             ...(isReopen ? { startedAt: now } : {}),
             completedAt: input.status === "running" ? null : (priorTask?.completedAt ?? now),
             updatedAt: now,
@@ -4336,6 +4349,9 @@ export function makeClaudeAdapterV2(
               prompt: task.prompt,
               ...(task.progress === undefined ? {} : { progress: task.progress }),
               result: task.result,
+              ...(task.workflow === undefined
+                ? {}
+                : { workflowName: task.workflow.name ?? task.title ?? "workflow" }),
             },
           });
 
@@ -5929,6 +5945,10 @@ export function makeClaudeAdapterV2(
                 ...(message.prompt === undefined ? {} : { prompt: message.prompt }),
                 ...(model === undefined ? {} : { model }),
                 ...(owner === undefined ? {} : { owner }),
+                // A workflow run gets its card immediately; task_progress fills in phases and agents.
+                ...(message.task_type === "local_workflow"
+                  ? { workflow: { name: message.workflow_name ?? null, phases: [], agents: [] } }
+                  : {}),
                 title: message.description,
                 status: "running",
                 reopen: true,
@@ -5942,16 +5962,28 @@ export function makeClaudeAdapterV2(
               liveQuery.nativeThreadId,
               message.task_id,
             );
+            const known = context.subagentsByTaskId.get(message.task_id)?.task;
+            const workflow = parseClaudeWorkflowProgress(
+              // Undeclared in sdk.d.ts but sent on workflow tasks: a full snapshot every tick.
+              (message as unknown as Record<string, unknown>).workflow_progress,
+              known?.workflow?.name ?? null,
+            );
+            // Ticks repeat unchanged snapshots; only a changed workflow is worth an update.
+            const workflowChanged =
+              workflow !== undefined && !sameWorkflowProgress(workflow, known?.workflow);
             if (
-              progress.length > 0 &&
+              (progress.length > 0 || workflowChanged) &&
               !context.ignoredTaskIds.has(message.task_id) &&
               !isBackgroundTask
             ) {
+              const usage = claudeSubagentUsage(message.usage);
               yield* updateClaudeSubagentNode({
                 context,
                 taskId: message.task_id,
                 ...(message.tool_use_id === undefined ? {} : { toolUseId: message.tool_use_id }),
-                progress,
+                ...(progress.length > 0 ? { progress } : {}),
+                ...(usage === undefined ? {} : { usage }),
+                ...(workflowChanged ? { workflow } : {}),
                 status: "running",
               });
             }
@@ -6001,11 +6033,39 @@ export function makeClaudeAdapterV2(
               activeContext: context,
             });
             if (!wasBackgroundTask && !context.ignoredTaskIds.has(message.task_id)) {
+              const cwd = context.input.runtimePolicy.cwd ?? null;
+              // A finished workflow's saved run record is its complete final state.
+              const finishing =
+                context.subagentsByTaskId.get(message.task_id) ??
+                (yield* Ref.get(sessionSubagentsByTaskId)).get(message.task_id);
+              const finalRun =
+                finishing?.task.workflow === undefined
+                  ? Option.none()
+                  : yield* readClaudeWorkflowRunSnapshot({
+                      configDir: adapterOptions.environment.CLAUDE_CONFIG_DIR?.trim()
+                        ? path.resolve(
+                            cwd ?? ".",
+                            adapterOptions.environment.CLAUDE_CONFIG_DIR.trim(),
+                          )
+                        : path.join(NodeOS.homedir(), ".claude"),
+                      cwd,
+                      sessionId: message.session_id,
+                      taskId: message.task_id,
+                    }).pipe(
+                      Effect.provideService(FileSystem.FileSystem, fileSystem),
+                      Effect.provideService(Path.Path, path),
+                    );
+              const usage = Option.match(finalRun, {
+                onNone: () => claudeSubagentUsage(message.usage),
+                onSome: (run) => run.usage ?? claudeSubagentUsage(message.usage),
+              });
               yield* updateClaudeSubagentNode({
                 context,
                 taskId: message.task_id,
                 ...(message.tool_use_id === undefined ? {} : { toolUseId: message.tool_use_id }),
                 result: message.summary,
+                ...(usage === undefined ? {} : { usage }),
+                ...(Option.isSome(finalRun) ? { workflow: finalRun.value.workflow } : {}),
                 status:
                   message.status === "completed"
                     ? "completed"
