@@ -94,8 +94,8 @@ function EmptyMobileClients() {
       <EmptyHeader>
         <EmptyTitle>No mobile clients</EmptyTitle>
         <EmptyDescription>
-          Install harness-wrapper on your phone and sign in to T3 Connect to get push notifications
-          and Live Activities.
+          Install OC-UI on your phone and sign in to T3 Connect to get push notifications and Live
+          Activities.
         </EmptyDescription>
       </EmptyHeader>
     </Empty>

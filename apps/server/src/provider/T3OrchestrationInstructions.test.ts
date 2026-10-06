@@ -57,9 +57,9 @@ describe("T3 orchestration provider instructions", () => {
       state: { interactionMode: "default", hasT3Mcp: true },
     });
 
-    assert.include(injected, "harness-wrapper interaction mode: Default");
-    assert.include(injected, "harness-wrapper collaborative browser");
-    assert.include(injected, "harness-wrapper orchestration");
+    assert.include(injected, "OC-UI interaction mode: Default");
+    assert.include(injected, "OC-UI collaborative browser");
+    assert.include(injected, "OC-UI orchestration");
     assert.include(injected, "<user_request>\nInspect the repository.\n</user_request>");
   });
 
@@ -77,14 +77,14 @@ describe("T3 orchestration provider instructions", () => {
         state: { ...defaultState, interactionMode: "plan" },
         previousState: defaultState,
       }),
-      "harness-wrapper interaction mode: Plan",
+      "OC-UI interaction mode: Plan",
     );
     const withoutMcp = t3AcpPromptWithInstructions({
       prompt,
       state: { interactionMode: "default", hasT3Mcp: false },
     });
-    assert.include(withoutMcp, "harness-wrapper interaction mode: Default");
-    assert.notInclude(withoutMcp, "harness-wrapper collaborative browser");
-    assert.notInclude(withoutMcp, "harness-wrapper orchestration");
+    assert.include(withoutMcp, "OC-UI interaction mode: Default");
+    assert.notInclude(withoutMcp, "OC-UI collaborative browser");
+    assert.notInclude(withoutMcp, "OC-UI orchestration");
   });
 });

@@ -242,7 +242,7 @@ export default async function t3McpExtension(pi: ExtensionAPI) {
       toolInputSummary(event.input),
     );
     if (!approved) {
-      return { block: true, reason: \`\${event.toolName} was declined in harness-wrapper.\` };
+      return { block: true, reason: \`\${event.toolName} was declined in OC-UI.\` };
     }
   });
 

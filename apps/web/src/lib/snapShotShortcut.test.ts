@@ -103,7 +103,7 @@ describe("window capture shortcut labels", () => {
 });
 
 describe("window capture keybinding conflicts", () => {
-  it("finds an effective harness-wrapper keybinding on the current platform", () => {
+  it("finds an effective OC-UI keybinding on the current platform", () => {
     expect(
       snapShotKeybindingConflict(
         {

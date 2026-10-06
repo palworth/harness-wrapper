@@ -86,14 +86,14 @@ describe.skipIf(HostProcessPlatform.defaultValue() !== "linux")("installer termi
           expect(code).not.toBe(0);
           expect(output).toContain("500");
           expect(output).not.toContain("100%");
-          expect(output).not.toContain("Installed harness-wrapper");
+          expect(output).not.toContain("Installed OC-UI");
           expect(await NodeFSP.readdir(versions)).toEqual([]);
         } else {
           expect(code).toBe(0);
           expect(sawPartialProgress).toBe(true);
           expect(output).toContain("100%");
           expect(output).toContain("0.1 / 0.1 MB");
-          expect(output).toContain("Installed harness-wrapper 1.2.3");
+          expect(output).toContain("Installed OC-UI 1.2.3");
           expect(
             await NodeFSP.readFile(NodePath.join(versions, version, ".install-complete"), "utf8"),
           ).toBe("1.2.3\n");

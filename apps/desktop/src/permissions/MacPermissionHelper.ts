@@ -60,8 +60,8 @@ button:focus-visible { outline: 2px solid #007aff; outline-offset: 3px; }
 img { width: 32px; height: 32px; pointer-events: none; }
 </style></head><body><main id="panel">
 <button id="close" aria-label="Close permission helper">×</button>
-<header>↑ Drag harness-wrapper into the list above</header>
-<button id="app" draggable="true" aria-label="Drag harness-wrapper to System Settings, or click to reveal in Finder"><img src="${escapeHtml(icon)}" alt="" draggable="false">harness-wrapper</button>
+<header>↑ Drag OC-UI into the list above</header>
+<button id="app" draggable="true" aria-label="Drag OC-UI to System Settings, or click to reveal in Finder"><img src="${escapeHtml(icon)}" alt="" draggable="false">OC-UI</button>
 </main></body></html>`;
 }
 
@@ -95,7 +95,7 @@ export class MacPermissionHelper {
     const appIcon = iconPaths
       .map((iconPath) => Electron.nativeImage.createFromPath(iconPath))
       .find((image) => !image.isEmpty());
-    if (!appIcon) throw new Error("The packaged harness-wrapper icon is missing.");
+    if (!appIcon) throw new Error("The packaged OC-UI icon is missing.");
     const icon = appIcon.resize({ width: 64, height: 64 });
     const window = new Electron.BrowserWindow({
       width: 560,

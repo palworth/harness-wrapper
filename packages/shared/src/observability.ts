@@ -28,7 +28,7 @@ export interface SignalExport {
   readonly exportIntervalMs: number;
 }
 
-/** What harness-wrapper exports with when nothing configured a signal. */
+/** What OC-UI exports with when nothing configured a signal. */
 export const DEFAULT_SIGNAL_EXPORT: SignalExport = {
   protocol: "http/json",
   headers: undefined,

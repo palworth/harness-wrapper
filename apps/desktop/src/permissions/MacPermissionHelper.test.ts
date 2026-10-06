@@ -61,7 +61,7 @@ vi.mock("electron", async () => {
   }
   return {
     app: {
-      getPath: () => "/Applications/harness-wrapper (Nightly).app/Contents/MacOS/harness-wrapper",
+      getPath: () => "/Applications/OC-UI (Nightly).app/Contents/MacOS/OC-UI",
     },
     nativeImage: { createFromPath: mocks.createFromPath },
     BrowserWindow: class extends MockWindow {},
@@ -124,13 +124,11 @@ function send(action: string, trusted = true) {
 
 describe("macAppBundlePath", () => {
   it("resolves bundles with spaces and refuses non-bundle executables", () => {
-    expect(
-      macAppBundlePath("/Applications/harness-wrapper.app/Contents/MacOS/harness-wrapper"),
-    ).toBe("/Applications/harness-wrapper.app");
+    expect(macAppBundlePath("/Applications/OC-UI.app/Contents/MacOS/OC-UI")).toBe(
+      "/Applications/OC-UI.app",
+    );
     expect(macAppBundlePath("/usr/local/bin/electron")).toBeUndefined();
-    expect(
-      macAppBundlePath("/Applications/harness-wrapper.app/other/MacOS/harness-wrapper"),
-    ).toBeUndefined();
+    expect(macAppBundlePath("/Applications/OC-UI.app/other/MacOS/OC-UI")).toBeUndefined();
   });
 });
 it("drags the running app bundle only for the helper's own renderer", async () => {
@@ -140,13 +138,11 @@ it("drags the running app bundle only for the helper's own renderer", async () =
   send("drag");
   expect(mocks.createFromPath).toHaveBeenCalledWith("/bundle/prod-resources/icon.png");
   expect(mocks.startDrag).toHaveBeenCalledWith({
-    file: "/Applications/harness-wrapper (Nightly).app",
+    file: "/Applications/OC-UI (Nightly).app",
     icon: mocks.createFromPath.mock.results[0]!.value.resize(),
   });
   send("finder");
-  expect(mocks.showItemInFolder).toHaveBeenCalledWith(
-    "/Applications/harness-wrapper (Nightly).app",
-  );
+  expect(mocks.showItemInFolder).toHaveBeenCalledWith("/Applications/OC-UI (Nightly).app");
 });
 it("rechecks permissions and releases resources when granted", async () => {
   await open();
@@ -172,7 +168,7 @@ it("does not open for a permission already granted", async () => {
 });
 it("does not show a helper with a missing packaged icon", async () => {
   mocks.createFromPath.mockReturnValueOnce({ isEmpty: () => true });
-  await expect(open()).rejects.toThrow("packaged harness-wrapper icon is missing");
+  await expect(open()).rejects.toThrow("packaged OC-UI icon is missing");
   expect(windows).toHaveLength(0);
 });
 it("cleans up when the helper page fails to load", async () => {
@@ -188,9 +184,7 @@ it("offers the Finder fallback when native dragging fails", async () => {
     throw new Error("drag failed");
   });
   send("drag");
-  expect(mocks.showItemInFolder).toHaveBeenCalledWith(
-    "/Applications/harness-wrapper (Nightly).app",
-  );
+  expect(mocks.showItemInFolder).toHaveBeenCalledWith("/Applications/OC-UI (Nightly).app");
   expect(windows[0]!.destroyed).toBe(false);
 });
 

@@ -201,7 +201,7 @@ describe("ConnectionResolver", () => {
       const error = yield* Effect.flip(broker.prepare(catalogEntry(target)));
 
       expect(error).toMatchObject({ reason: "unsupported" });
-      expect(error.message).toContain("Update harness-wrapper on Compatible environment");
+      expect(error.message).toContain("Update OC-UI on Compatible environment");
     }),
   );
 

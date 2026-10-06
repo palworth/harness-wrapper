@@ -217,8 +217,7 @@ export function CaptureShortcutConfig({
       ) : (
         <>
           <p className="text-muted-foreground">
-            Allow harness-wrapper to read your desktop settings. You'll review any changes here
-            before saving.
+            Allow OC-UI to read your desktop settings. You'll review any changes here before saving.
           </p>
           <Button
             disabled={actionBusy || !supported}
@@ -229,7 +228,7 @@ export function CaptureShortcutConfig({
           </Button>
           {!supported ? (
             <p className="text-xs text-muted-foreground">
-              Update harness-wrapper to finish setting up your shortcut.
+              Update OC-UI to finish setting up your shortcut.
             </p>
           ) : null}
         </>
@@ -243,7 +242,7 @@ export function CaptureShortcutConfig({
         <p role="status" className="text-muted-foreground">
           {state.shortcutPending
             ? "Connecting to your desktop…"
-            : "Restart harness-wrapper to finish connecting your shortcut."}
+            : "Restart OC-UI to finish connecting your shortcut."}
         </p>
       ) : null}
       <details className="text-xs text-muted-foreground">
@@ -262,7 +261,7 @@ export function CaptureShortcutConfig({
                 state.shortcutConfigPath ??
                 (niri ? "~/.config/niri/config.kdl" : "~/.config/hypr/hyprland.conf")}
             </p>
-            {niri ? <p>harness-wrapper also reads any files included by this file.</p> : null}
+            {niri ? <p>OC-UI also reads any files included by this file.</p> : null}
             {preview && preview.resolvedPath !== preview.path ? (
               <p className="break-all">Linked to {preview.resolvedPath}. The link will be kept.</p>
             ) : null}
@@ -323,8 +322,8 @@ export function CaptureShortcutConfig({
             {isCopied ? "Copied" : "Copy shortcut"}
           </Button>
           <p>
-            Turn capture off in harness-wrapper to stop it. Remove the shortcut from {desktop} to
-            free up the keys.
+            Turn capture off in OC-UI to stop it. Remove the shortcut from {desktop} to free up the
+            keys.
           </p>
           {state.shortcutActionRegistered === false ? (
             <p role="status">{state.shortcutMessage}</p>

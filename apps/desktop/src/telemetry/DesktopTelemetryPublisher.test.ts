@@ -25,7 +25,7 @@ function makeElectronAppLayer(
 ) {
   return Layer.succeed(ElectronApp.ElectronApp, {
     metadata: Effect.die("unexpected metadata read"),
-    name: Effect.succeed("harness-wrapper"),
+    name: Effect.succeed("OC-UI"),
     systemLocale: Effect.succeed("en-US"),
     whenReady: Effect.void,
     quit: Effect.void,

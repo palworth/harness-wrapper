@@ -1,0 +1,48 @@
+/* OC-UI brand typography (fork-only; see FORK.md).
+ *
+ * IBM Plex Sans for the interface and IBM Plex Mono for code: a utilitarian,
+ * engineered pairing in the spirit of Palantir's product typography. Fonts are
+ * vendored (SIL OFL, see fonts/OFL.txt) so the desktop app works offline.
+ *
+ * These rules are unlayered, so they beat the `@theme` defaults in index.css.
+ * A family picked in Settings -> Appearance is still applied inline on <html>
+ * and wins over this file. */
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-sans-latin-wght.woff2") format("woff2-variations");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-latin-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-mono-latin-600.woff2") format("woff2");
+}
+
+:root {
+  --font-sans:
+    "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono:
+    "IBM Plex Mono", ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}

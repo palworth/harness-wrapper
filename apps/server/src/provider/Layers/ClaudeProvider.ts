@@ -480,7 +480,7 @@ export const checkClaudeProviderStatus = Effect.fn("checkClaudeProviderStatus")(
         version: null,
         status: "warning",
         auth: { status: "unknown" },
-        message: "Claude is disabled in harness-wrapper settings.",
+        message: "Claude is disabled in OC-UI settings.",
       },
     });
   }
@@ -652,7 +652,7 @@ export const makePendingClaudeProvider = (
           version: null,
           status: "warning",
           auth: { status: "unknown" },
-          message: "Claude is disabled in harness-wrapper settings.",
+          message: "Claude is disabled in OC-UI settings.",
         },
       });
     }

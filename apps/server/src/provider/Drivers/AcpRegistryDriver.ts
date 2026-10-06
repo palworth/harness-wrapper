@@ -294,7 +294,7 @@ const buildInitialAcpRegistrySnapshot = Effect.fn("AcpRegistryDriver.buildInitia
       auth: { status: "unknown" },
       message: input.settings.enabled
         ? "Checking ACP Registry agent readiness..."
-        : "ACP Registry is disabled in harness-wrapper settings.",
+        : "ACP Registry is disabled in OC-UI settings.",
     });
   },
 );
@@ -323,7 +323,7 @@ export function buildCheckedAcpRegistrySnapshot(
       ? `Sign in in provider settings using "${advertisedAuthMethod.name}". The login terminal runs on this environment.`
       : advertisedAuthMethod.type === "env_var" &&
           (advertisedAuthMethod.envVarNames?.length ?? 0) > 0
-        ? `Set ${advertisedAuthMethod.envVarNames!.join(", ")} under this instance's environment variables in provider settings. harness-wrapper will detect it on the next provider refresh.`
+        ? `Set ${advertisedAuthMethod.envVarNames!.join(", ")} under this instance's environment variables in provider settings. OC-UI will detect it on the next provider refresh.`
         : `Sign in in provider settings using "${advertisedAuthMethod.name}".`
     : undefined;
   return baseSnapshot({

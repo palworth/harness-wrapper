@@ -1529,8 +1529,8 @@ function codexReplayPreamble(input: {
         method: "initialize",
         params: {
           clientInfo: {
-            name: "harness-wrapper",
-            title: "harness-wrapper",
+            name: "OC-UI",
+            title: "OC-UI",
             version: packageJson.version,
           },
           capabilities: {
@@ -1546,7 +1546,7 @@ function codexReplayPreamble(input: {
       frame: {
         id: 1,
         result: {
-          userAgent: "harness-wrapper/0.156.1",
+          userAgent: "OC-UI/0.156.1",
           codexHome: "/tmp/codex-home",
           platformFamily: "unix",
           platformOs: "macos",
@@ -1909,8 +1909,8 @@ describe("CodexAdapterV2 post-settle continuation", () => {
       assert.deepEqual(initializeParams, [
         {
           clientInfo: {
-            name: "harness-wrapper",
-            title: "harness-wrapper",
+            name: "OC-UI",
+            title: "OC-UI",
             version: packageJson.version,
           },
           capabilities: {

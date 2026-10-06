@@ -206,7 +206,7 @@ const makeHarness = Effect.fn("TestRemoteAuthorization.makeHarness")(function* (
           ClientCapabilities.ClientPresentation,
           ClientCapabilities.ClientPresentation.of({
             metadata: {
-              label: "harness-wrapper Test",
+              label: "OC-UI Test",
               deviceType: "mobile",
               os: "test",
             },

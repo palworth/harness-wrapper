@@ -11,7 +11,7 @@ describe("SnapShotAttachmentDetails", () => {
       kind: "snap-shot" as const,
       capturedAt: "2026-08-27T00:00:00.000Z",
       appName: "Safari",
-      windowTitle: "harness-wrapper",
+      windowTitle: "OC-UI",
     };
 
     expect(snapShotIncludesAccessibility(source)).toBe(false);
@@ -23,7 +23,7 @@ describe("SnapShotAttachmentDetails", () => {
       kind: "snap-shot" as const,
       capturedAt: "2026-08-27T00:00:00.000Z",
       appName: "Safari",
-      windowTitle: "harness-wrapper",
+      windowTitle: "OC-UI",
       accessibility: {
         format: "element-tree" as const,
         coordinateSpace: "captured-image" as const,
@@ -31,7 +31,7 @@ describe("SnapShotAttachmentDetails", () => {
         truncated: false,
         root: {
           role: "window",
-          name: "harness-wrapper",
+          name: "OC-UI",
           bounds: { x: 0, y: 0, width: 800, height: 600 },
           children: [
             {
@@ -57,8 +57,8 @@ describe("SnapShotAttachmentDetails", () => {
       kind: "snap-shot" as const,
       capturedAt: "2026-08-27T00:00:00.000Z",
       appName: "Safari",
-      windowTitle: "harness-wrapper",
-      accessibleText: "harness-wrapper\nSave",
+      windowTitle: "OC-UI",
+      accessibleText: "OC-UI\nSave",
       accessibility: {
         format: "element-tree" as const,
         coordinateSpace: "captured-image" as const,
@@ -66,7 +66,7 @@ describe("SnapShotAttachmentDetails", () => {
         truncated: false,
         root: {
           role: "window",
-          name: "harness-wrapper",
+          name: "OC-UI",
           bounds: { x: 0, y: 0, width: 800, height: 600 },
           children: [],
         },

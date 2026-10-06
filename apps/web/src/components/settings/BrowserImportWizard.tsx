@@ -285,11 +285,11 @@ function FullDiskAccessStep({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Let harness-wrapper read {source.name}&rsquo;s cookies</DialogTitle>
+        <DialogTitle>Let OC-UI read {source.name}&rsquo;s cookies</DialogTitle>
         <DialogDescription>
-          To import cookies from {source.name}, harness-wrapper needs Full Disk Access. Turn it on
-          in System Settings, then come back to finish the import — you can revoke it again once the
-          import is done.
+          To import cookies from {source.name}, OC-UI needs Full Disk Access. Turn it on in System
+          Settings, then come back to finish the import — you can revoke it again once the import is
+          done.
         </DialogDescription>
       </DialogHeader>
       <DialogPanel>
@@ -319,8 +319,8 @@ function FullDiskAccessStep({
         {!permission.isReady(["fullDiskAccess"]) ? (
           <p className="mt-3 text-xs text-muted-foreground">
             {stillRequired
-              ? "Access is still required. Quit and reopen harness-wrapper if you just allowed it, then retry the import."
-              : "If access doesn't update after you allow it, quit and reopen harness-wrapper, then retry the import."}
+              ? "Access is still required. Quit and reopen OC-UI if you just allowed it, then retry the import."
+              : "If access doesn't update after you allow it, quit and reopen OC-UI, then retry the import."}
           </p>
         ) : null}
       </DialogPanel>

@@ -286,7 +286,7 @@ export const makeCodexInstallation = Effect.fn("makeCodexInstallation")(function
       return executable;
     },
     Effect.mapError(
-      wrapFailure("resolve", "Codex is not installed in harness-wrapper. Install it to continue."),
+      wrapFailure("resolve", "Codex is not installed in OC-UI. Install it to continue."),
     ),
   );
   const acquire = Effect.fn("CodexInstallation.acquire")(function* () {

@@ -21,7 +21,7 @@ export function orchestrationProtocolCompatibilityError(
       })
     : new ConnectionBlockedError({
         reason: "unsupported",
-        detail: `This client requires a newer server. Update harness-wrapper on ${descriptor.label} to connect.`,
+        detail: `This client requires a newer server. Update OC-UI on ${descriptor.label} to connect.`,
         ...(canSelfUpdate(descriptor) ? { serverUpdateRequired: true } : {}),
       });
 }

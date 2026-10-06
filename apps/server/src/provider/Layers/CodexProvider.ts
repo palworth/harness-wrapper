@@ -347,8 +347,8 @@ const requestAllCodexModels = Effect.fn("requestAllCodexModels")(function* (
 export function buildCodexInitializeParams(): CodexSchema.V1InitializeParams {
   return {
     clientInfo: {
-      name: "harness-wrapper",
-      title: "harness-wrapper",
+      name: "OC-UI",
+      title: "OC-UI",
       version: packageJson.version,
     },
     capabilities: {
@@ -515,7 +515,7 @@ const makePendingCodexProvider = (
           version: null,
           status: "warning",
           auth: { status: "unknown" },
-          message: "Codex is disabled in harness-wrapper settings.",
+          message: "Codex is disabled in OC-UI settings.",
         },
       });
     }
@@ -603,7 +603,7 @@ export const checkCodexProviderStatus = Effect.fn("checkCodexProviderStatus")(fu
         version: null,
         status: "warning",
         auth: { status: "unknown" },
-        message: "Codex is disabled in harness-wrapper settings.",
+        message: "Codex is disabled in OC-UI settings.",
       },
     });
   }

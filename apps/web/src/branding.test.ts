@@ -24,9 +24,9 @@ describe("branding", () => {
       value: {
         desktopBridge: {
           getAppBranding: () => ({
-            baseName: "harness-wrapper",
+            baseName: "OC-UI",
             stageLabel: "Nightly",
-            displayName: "harness-wrapper (Nightly)",
+            displayName: "OC-UI (Nightly)",
           }),
         },
       },
@@ -34,9 +34,9 @@ describe("branding", () => {
 
     const branding = await import("./branding");
 
-    expect(branding.APP_BASE_NAME).toBe("harness-wrapper");
+    expect(branding.APP_BASE_NAME).toBe("OC-UI");
     expect(branding.APP_STAGE_LABEL).toBe("Nightly");
-    expect(branding.APP_DISPLAY_NAME).toBe("harness-wrapper (Nightly)");
+    expect(branding.APP_DISPLAY_NAME).toBe("OC-UI (Nightly)");
   });
 
   it("normalizes hosted app channel metadata", async () => {
@@ -47,7 +47,7 @@ describe("branding", () => {
     expect(branding.HOSTED_APP_CHANNEL).toBe("nightly");
     expect(branding.HOSTED_APP_CHANNEL_LABEL).toBe("Nightly");
     expect(branding.APP_STAGE_LABEL).toBe("Nightly");
-    expect(branding.APP_DISPLAY_NAME).toBe("harness-wrapper (Nightly)");
+    expect(branding.APP_DISPLAY_NAME).toBe("OC-UI (Nightly)");
   });
 
   it("does not label the latest hosted app channel", async () => {
@@ -58,7 +58,7 @@ describe("branding", () => {
     expect(branding.HOSTED_APP_CHANNEL).toBe("latest");
     expect(branding.HOSTED_APP_CHANNEL_LABEL).toBe("Latest");
     expect(branding.APP_STAGE_LABEL).toBe("Latest");
-    expect(branding.APP_DISPLAY_NAME).toBe("harness-wrapper");
+    expect(branding.APP_DISPLAY_NAME).toBe("OC-UI");
   });
 
   it("ignores unknown hosted app channels", async () => {
@@ -84,33 +84,33 @@ describe("branding logic", () => {
   it("updates the display name for nightly primary server versions", () => {
     expect(
       resolveServerBackedAppDisplayName({
-        baseName: "harness-wrapper",
-        fallbackDisplayName: "harness-wrapper (Alpha)",
+        baseName: "OC-UI",
+        fallbackDisplayName: "OC-UI (Alpha)",
         fallbackStageLabel: "Alpha",
         primaryServerVersion: "0.0.28-nightly.20260616.12",
       }),
-    ).toBe("harness-wrapper (Nightly)");
+    ).toBe("OC-UI (Nightly)");
   });
 
   it("keeps the fallback display name for stable primary server versions", () => {
     expect(
       resolveServerBackedAppDisplayName({
-        baseName: "harness-wrapper",
-        fallbackDisplayName: "harness-wrapper (Alpha)",
+        baseName: "OC-UI",
+        fallbackDisplayName: "OC-UI (Alpha)",
         fallbackStageLabel: "Alpha",
         primaryServerVersion: "0.0.27",
       }),
-    ).toBe("harness-wrapper (Alpha)");
+    ).toBe("OC-UI (Alpha)");
   });
 
   it("keeps the fallback display name for malformed nightly primary server versions", () => {
     expect(
       resolveServerBackedAppDisplayName({
-        baseName: "harness-wrapper",
-        fallbackDisplayName: "harness-wrapper (Alpha)",
+        baseName: "OC-UI",
+        fallbackDisplayName: "OC-UI (Alpha)",
         fallbackStageLabel: "Alpha",
         primaryServerVersion: "0.0.28-nightly.20260616",
       }),
-    ).toBe("harness-wrapper (Alpha)");
+    ).toBe("OC-UI (Alpha)");
   });
 });
