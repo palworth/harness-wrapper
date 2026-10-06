@@ -655,6 +655,51 @@ export const OrchestrationV2ExecutionNode = Schema.Struct({
 });
 export type OrchestrationV2ExecutionNode = typeof OrchestrationV2ExecutionNode.Type;
 
+/** Token and tool totals a provider reports for one subagent run. */
+export const OrchestrationV2SubagentUsage = Schema.Struct({
+  totalTokens: Schema.Number,
+  toolUses: Schema.Number,
+  durationMs: Schema.Number,
+});
+export type OrchestrationV2SubagentUsage = typeof OrchestrationV2SubagentUsage.Type;
+
+export const OrchestrationV2WorkflowAgent = Schema.Struct({
+  /** Stable 1-based slot in the workflow run; the agent's identity across updates. */
+  index: Schema.Number,
+  label: Schema.NullOr(Schema.String),
+  phaseIndex: Schema.NullOr(Schema.Number),
+  model: Schema.NullOr(Schema.String),
+  state: Schema.Literals(["queued", "running", "done", "failed"]),
+  attempt: Schema.NullOr(Schema.Number),
+  tokens: Schema.NullOr(Schema.Number),
+  toolCalls: Schema.NullOr(Schema.Number),
+  durationMs: Schema.NullOr(Schema.Number),
+  /** Epoch milliseconds. */
+  startedAt: Schema.NullOr(Schema.Number),
+  lastToolName: Schema.NullOr(Schema.String),
+  lastToolSummary: Schema.NullOr(Schema.String),
+  resultPreview: Schema.NullOr(Schema.String),
+  error: Schema.NullOr(Schema.String),
+});
+export type OrchestrationV2WorkflowAgent = typeof OrchestrationV2WorkflowAgent.Type;
+
+/**
+ * Live progress of a scripted multi-agent workflow (Claude's Workflow tool),
+ * carried on the subagent that represents the whole run.
+ */
+export const OrchestrationV2WorkflowProgress = Schema.Struct({
+  name: Schema.NullOr(Schema.String),
+  phases: Schema.Array(
+    Schema.Struct({
+      index: Schema.Number,
+      title: Schema.String,
+      detail: Schema.NullOr(Schema.String),
+    }),
+  ),
+  agents: Schema.Array(OrchestrationV2WorkflowAgent),
+});
+export type OrchestrationV2WorkflowProgress = typeof OrchestrationV2WorkflowProgress.Type;
+
 export const OrchestrationV2Subagent = Schema.Struct({
   id: NodeId,
   threadId: ThreadId,
@@ -689,6 +734,9 @@ export const OrchestrationV2Subagent = Schema.Struct({
   ]),
   progress: Schema.optional(Schema.String),
   result: Schema.NullOr(Schema.String),
+  usage: Schema.optional(OrchestrationV2SubagentUsage),
+  /** Present when this subagent is a scripted workflow run rather than a single agent. */
+  workflow: Schema.optional(OrchestrationV2WorkflowProgress),
   startedAt: Schema.NullOr(Schema.DateTimeUtc),
   completedAt: Schema.NullOr(Schema.DateTimeUtc),
   updatedAt: Schema.DateTimeUtc,
@@ -1480,6 +1528,8 @@ export const OrchestrationV2TurnItem = Schema.Union([
     prompt: Schema.String,
     progress: Schema.optional(Schema.String),
     result: Schema.NullOr(Schema.String),
+    /** Set when the subagent is a scripted workflow run; its card stays visible when the turn folds. */
+    workflowName: Schema.optional(Schema.String),
   }),
   Schema.Struct({
     ...OrchestrationV2TurnItemBaseFields,
@@ -2213,6 +2263,8 @@ export const OrchestrationV2TurnItemJson = Schema.Union([
     prompt: Schema.String,
     progress: Schema.optional(Schema.String),
     result: Schema.NullOr(Schema.String),
+    /** Set when the subagent is a scripted workflow run; its card stays visible when the turn folds. */
+    workflowName: Schema.optional(Schema.String),
   }),
   Schema.Struct({
     ...OrchestrationV2TurnItemJsonBaseFields,

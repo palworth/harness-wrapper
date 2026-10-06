@@ -981,6 +981,14 @@ function deriveTurnFolds(input: {
       if (timelineEntryIsPersistentResourceCard(entry)) {
         continue;
       }
+      // A workflow keeps running after the turn that launched it; keep its card in view.
+      if (
+        entry.kind === "event" &&
+        entry.projectedItem.item.type === "subagent" &&
+        entry.projectedItem.item.workflowName !== undefined
+      ) {
+        continue;
+      }
       if (entry.kind === "work" && entry.entry.itemType === "notification") continue;
       hiddenEntryIds.add(entry.id);
     }
